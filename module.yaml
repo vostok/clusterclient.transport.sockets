@@ -1,0 +1,17 @@
+notests *default:
+  build:
+    target: Vostok.ClusterClient.Transport.Sockets.sln
+    configuration: NoTests
+    tool:
+      name: dotnet
+
+  install:
+    - Vostok.ClusterClient.Transport.Sockets/bin/Release/netstandard2.0/Vostok.ClusterClient.Transport.Sockets.dll
+
+  deps:
+    - vostok.devtools
+
+full-build > notests:
+  build:
+    target: Vostok.ClusterClient.Transport.Sockets.sln
+    configuration: Release
