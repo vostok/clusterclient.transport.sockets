@@ -1,10 +1,7 @@
 using System;
-using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
-using System.Threading;
-using Vostok.ClusterClient.Core.Model;
 
 namespace Vostok.ClusterClient.Transport.Sockets
 {
@@ -75,29 +72,6 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 TcpKeepAlivePeriod = TcpKeepAlivePeriod,
                 TcpKeepAliveTime = TcpKeepAliveTime
             };
-        }
-    }
-
-    internal class RequestState
-    {
-        public RequestState(Request request, CancellationTokenSource cancellationTokenSource)
-        {
-            Request = request;
-            this.cancellationTokenSource = cancellationTokenSource;
-        }
-
-        public Request Request;
-        private readonly CancellationTokenSource cancellationTokenSource;
-        public HttpActionStatus Status;
-        public CancellationToken CancellationToken => cancellationTokenSource.Token;
-
-        public void Cancel()
-        {
-            try
-            {
-                cancellationTokenSource.Cancel();
-            }
-            catch{ }
         }
     }
 

@@ -7,39 +7,54 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Vostok.ClusterClient.Core.Model;
+using Vostok.ClusterClient.Transport.Webrequest.Pool;
 using Vostok.Commons.Collections;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.ClusterClient.Transport.Sockets
 {
+    internal class ResponseException : Exception
+    {
+        public Response Response { get; }
+
+        public ResponseException(Response response)
+        {
+            Response = response;
+        }
+    }
+    
     internal class RequestStreamContent : HttpContent
     {
         private readonly RequestState state;
         private readonly ILog log;
-        private readonly UnboundedObjectPool<byte[]> arrayPool;
+        private readonly CancellationToken cancellationToken;
+        private readonly Request request;
+        private readonly IPool<byte[]> arrayPool;
 
         public RequestStreamContent(
-            RequestState state,
-            UnboundedObjectPool<byte[]> arrayPool,
-            ILog log)
+            Request request,
+            IPool<byte[]> arrayPool,
+            ILog log,
+             CancellationToken cancellationToken)
         {
-            this.state = state;
+            this.request = request;
             this.arrayPool = arrayPool;
             this.log = log;
+            this.cancellationToken = cancellationToken;
 
-            Headers.ContentLength = state.Request.StreamContent.Length;
+            Headers.ContentLength = request.StreamContent.Length;
         }
 
         protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context)
         {
-            var streamContent = state.Request.StreamContent;
+            var streamContent = request.StreamContent;
             var bodyStream = streamContent.Stream;
             var bytesToSend = streamContent.Length ?? long.MaxValue;
             var bytesSent = 0L;
 
             try
             {
-                using (arrayPool.Acquire(out var buffer))
+                using (arrayPool.AcquireHandle(out var buffer))
                 {
                     while (bytesSent < bytesToSend)
                     {
@@ -49,7 +64,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
 
                         try
                         {
-                            bytesRead = await bodyStream.ReadAsync(buffer, 0, bytesToRead, state.CancellationToken).ConfigureAwait(false);
+                            bytesRead = await bodyStream.ReadAsync(buffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
                         }
                         catch (StreamAlreadyUsedException)
                         {
@@ -57,45 +72,45 @@ namespace Vostok.ClusterClient.Transport.Sockets
                         }
                         catch (OperationCanceledException)
                         {
-                            state.Status = HttpActionStatus.RequestCanceled;
-                            return;
+                            throw;
                         }
                         catch (Exception error)
                         {
                             LogUserStreamFailure(error);
-
-                            state.Status = HttpActionStatus.UserStreamFailure;
-                            return;
+                            throw new ResponseException(new Response(ResponseCode.StreamInputFailure));
                         }
 
                         if (bytesRead == 0)
                             break;
 
-                        await stream.WriteAsync(buffer, 0, bytesRead, state.CancellationToken).ConfigureAwait(false);
+                        await stream.WriteAsync(buffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
 
                         bytesSent += bytesRead;
                     }
                 }
-
             }
             catch (OperationCanceledException)
             {
-                state.Status = HttpActionStatus.RequestCanceled;
+                throw;
             }
             catch (StreamAlreadyUsedException)
             {
                 throw;
             }
+            catch (ResponseException)
+            {
+                throw;
+            }
             catch (Exception e)
             {
-                state.Status = HttpActionStatus.SendFailure;
-                LogSendBodyFailure(state.Request.Url, e);
+                LogSendBodyFailure(request.Url, e);
+                throw new ResponseException(new Response(ResponseCode.SendFailure));
             }
         }
 
         protected override bool TryComputeLength(out long length)
         {
-            var streamContent = state.Request.StreamContent;
+            var streamContent = request.StreamContent;
             length = streamContent.Length ?? 0;
             return streamContent.Length != null && streamContent.Length >= 0;
         }

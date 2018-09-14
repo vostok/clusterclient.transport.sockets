@@ -1,6 +1,8 @@
 using System;
 using System.Net.Http;
+using System.Threading;
 using Vostok.ClusterClient.Core.Model;
+using Vostok.ClusterClient.Transport.Webrequest.Pool;
 using Vostok.Commons.Collections;
 using Vostok.Logging.Abstractions;
 
@@ -8,48 +10,46 @@ namespace Vostok.ClusterClient.Transport.Sockets
 {
     internal class HttpRequestMessageFactory
     {
-        private readonly UnboundedObjectPool<byte[]> pool;
+        private readonly IPool<byte[]> pool;
         private readonly ILog log;
 
-        public HttpRequestMessageFactory(UnboundedObjectPool<byte[]> pool, ILog log)
+        public HttpRequestMessageFactory(IPool<byte[]> pool, ILog log)
         {
             this.pool = pool;
             this.log = log;
         }
 
-        public HttpRequestMessage Create(Request request, RequestState state, TimeSpan timeout)
+        public HttpRequestMessage Create(Request request, TimeSpan timeout, CancellationToken cancellationToken)
         {
             var method = TranslateRequestMethod(request.Method);
-            var content = CreateContent(state);
+            var content = CreateContent(request, cancellationToken);
 
             var message = new HttpRequestMessage(method, request.Url)
             {
                 Content = content
             };
 
-            HttpHeaderFiller.Fill(request, message, timeout, log);
+            HeadersConverter.Fill(request, message, timeout, log);
 
             return message;
         }
 
-        private HttpContent CreateContent(RequestState state)
+        private HttpContent CreateContent(Request request, CancellationToken cancellationToken)
         {
-            var request = state.Request;
-
             var content = request.Content;
             var streamContent = request.StreamContent;
             
             if (content != null)
-                return ByteArrayContent(state);
+                return ByteArrayContent(request, cancellationToken);
             if (streamContent != null)
-                return HttpStreamContent(state);
+                return HttpStreamContent(request, cancellationToken);
             
             return null;
         }
 
-        private HttpContent ByteArrayContent(RequestState state) => new RequestByteArrayContent(state, log);
+        private HttpContent ByteArrayContent(Request request, CancellationToken cancellationToken) => new RequestByteArrayContent(request, log, cancellationToken);
 
-        private HttpContent HttpStreamContent(RequestState state) => new RequestStreamContent(state, pool, log);
+        private HttpContent HttpStreamContent(Request request, CancellationToken cancellationToken) => new RequestStreamContent(request, pool, log, cancellationToken);
 
         private static HttpMethod TranslateRequestMethod(string httpMethod)
         {

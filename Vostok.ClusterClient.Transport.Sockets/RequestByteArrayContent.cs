@@ -2,45 +2,48 @@ using System;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
+using Vostok.ClusterClient.Core.Model;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.ClusterClient.Transport.Sockets
 {
     internal class RequestByteArrayContent : HttpContent
     {
-        private readonly RequestState state;
+        private readonly Request request;
         private readonly ILog log;
+        private readonly CancellationToken cancellationToken;
 
-        public RequestByteArrayContent(RequestState state, ILog log)
+        public RequestByteArrayContent(Request request, ILog log, CancellationToken cancellationToken)
         {
-            this.state = state;
+            this.request = request;
             this.log = log;
+            this.cancellationToken = cancellationToken;
         }
 
         protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context)
         {
+            var content = request.Content;
+            
             try
             {
-                var content = state.Request.Content;
-                await stream.WriteAsync(content.Buffer, content.Offset, content.Length, state.CancellationToken).ConfigureAwait(false);
-                await stream.FlushAsync().ConfigureAwait(false);
+                await stream.WriteAsync(content.Buffer, content.Offset, content.Length, cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
-                state.Status = HttpActionStatus.RequestCanceled;
+                throw;
             }
             catch (Exception e)
             {
-                state.Status = HttpActionStatus.SendFailure;
-                LogSendBodyFailure(state.Request.Url, e);
+                LogSendBodyFailure(request.Url, e);
             }
             
         }
 
         protected override bool TryComputeLength(out long length)
         {
-            length = state.Request.Content.Length;
+            length = request.Content.Length;
             return true;
         }
 

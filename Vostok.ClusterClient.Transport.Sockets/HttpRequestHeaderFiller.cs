@@ -1,15 +1,20 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using Vostok.ClusterClient.Core.Model;
+using Vostok.ClusterClient.Transport.Sockets.Utilities;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.ClusterClient.Transport.Sockets
 {
-    internal static class HttpHeaderFiller
+    internal static class HeadersConverter
     {
         public static void Fill(Request request, HttpRequestMessage message, TimeSpan timeout, ILog log)
-        {if (request.Headers != null)
+        {
+            if (request.Headers != null)
             {
                 var canAssignDirectly = HttpHeadersUnlocker.TryUnlockRestrictedHeaders(message.Headers, log);
                 if (canAssignDirectly)
@@ -25,9 +30,23 @@ namespace Vostok.ClusterClient.Transport.Sockets
             SetRequestTimeoutHeader(message.Headers, timeout);
 
             TrySetHostExplicitly(request.Headers, message.Headers);
-            //TrySetClientIdentityHeader(request, webRequest);
+            TrySetClientIdentityHeader(message.Headers);
         }
-        
+
+        public static Headers Create(HttpResponseMessage responseMessage)
+        {
+            var headers = Headers.Empty;
+            
+            foreach (var responseHeader in responseMessage.Headers)
+                headers = headers.Set(responseHeader.Key, string.Join(',', responseHeader.Value));
+            
+            if (responseMessage.Content != null)
+                foreach (var contentHeader in responseMessage.Content.Headers)
+                    headers = headers.Set(contentHeader.Key, string.Join(',', contentHeader.Value));
+
+            return headers;
+        }
+
         private static void AssignHeadersDirectly( Headers source,HttpHeaders target)
         {
             foreach (var header in source)
@@ -44,20 +63,19 @@ namespace Vostok.ClusterClient.Transport.Sockets
             headers.Add(HeaderNames.RequestTimeout, timeout.Ticks.ToString());
         }
 
+        private static void TrySetClientIdentityHeader(HttpHeaders headers)
+        {
+            
+            if (!headers.Contains(HeaderNames.ClientApplication))
+                headers.Add(HeaderNames.ClientApplication, ClientIdentityCore.Get());
+        }
+
         private static void TrySetHostExplicitly(Headers source, HttpRequestHeaders target)
         {
             var host = source?[HeaderNames.Host];
             if (host != null)
                 target.Host = host;
         }
-        
-        // private static void TrySetClientIdentityHeader(Request request, HttpHeaders headers)
-        // {
-        //     if (request.Headers?[HeaderNames.ClientApplication] == null)
-        //     {
-        //         webRequest.Headers.Set(HeaderNames.ClientApplication, UrlEncodingHelper.UrlEncode(HttpClientIdentity.Get()));
-        //     }
-        // }
         
         private static bool NeedToSkipHeader(string name)
         {

@@ -17,6 +17,7 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
         [TestCase(HeaderNames.ClientApplication, "Abonents.Service")]
         [TestCase(HeaderNames.RequestPriority, "Sheddable")]
         [TestCase(HeaderNames.RequestTimeout, "345345345")]
+        [TestCase(HeaderNames.ClientApplication, "first,second,third")]
         public void Should_correctly_receive_given_header_from_server(string headerName, string headerValue)
         {
             using (var server = TestServer.StartNew(ctx =>
