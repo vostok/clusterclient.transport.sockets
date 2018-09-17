@@ -59,7 +59,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 }
         }
 
-        public void PreventDispose()
+        public void PreventNextDispose()
         {
             Interlocked.Exchange(ref disposeBarrier, 1);
         }
@@ -73,7 +73,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
             DisposeResponse();
         }
 
-        public void DisposeRequest()
+        private void DisposeRequest()
         {
             if (RequestMessage != null)
                 try
@@ -89,7 +89,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 }
         }
 
-        public void DisposeResponse()
+        private void DisposeResponse()
         {
             if (ResponseMessage != null)
                 try

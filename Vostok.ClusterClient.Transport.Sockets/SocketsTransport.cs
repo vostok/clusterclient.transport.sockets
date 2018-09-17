@@ -261,9 +261,9 @@ namespace Vostok.ClusterClient.Transport.Sockets
         private async Task<Response> GetResponseWithStreamAsync(RequestState state)
         {
             var stream = await state.ResponseMessage.Content.ReadAsStreamAsync().ConfigureAwait(false);
-            state.PreventDispose();
-            return new Response(state.ResponseCode, null, state.Headers, stream);
-            
+            var wrappedStream = new ResponseStream(stream, state);
+            state.PreventNextDispose();
+            return new Response(state.ResponseCode, null, state.Headers, wrappedStream);
         }
 
         private void LogRequestTimeout(Request request, TimeSpan timeout)
@@ -297,6 +297,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
         public TransportCapabilities Capabilities { get; } = TransportCapabilities.RequestStreaming | TransportCapabilities.ResponseStreaming;
         internal SocketsTransportSettings Settings => settings;
 
+        /// <inheritdoc />
         public void Dispose()
         {
             client?.Dispose();

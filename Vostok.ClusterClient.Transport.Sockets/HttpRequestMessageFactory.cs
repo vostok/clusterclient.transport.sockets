@@ -38,18 +38,14 @@ namespace Vostok.ClusterClient.Transport.Sockets
         {
             var content = request.Content;
             var streamContent = request.StreamContent;
-            
+
             if (content != null)
-                return ByteArrayContent(request, cancellationToken);
+                return new RequestByteArrayContent(request, log, cancellationToken);
             if (streamContent != null)
-                return HttpStreamContent(request, cancellationToken);
+                return new RequestStreamContent(request, pool, log, cancellationToken);
             
             return null;
         }
-
-        private HttpContent ByteArrayContent(Request request, CancellationToken cancellationToken) => new RequestByteArrayContent(request, log, cancellationToken);
-
-        private HttpContent HttpStreamContent(Request request, CancellationToken cancellationToken) => new RequestStreamContent(request, pool, log, cancellationToken);
 
         private static HttpMethod TranslateRequestMethod(string httpMethod)
         {
