@@ -43,8 +43,8 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 return new RequestByteArrayContent(request, log, cancellationToken);
             if (streamContent != null)
                 return new RequestStreamContent(request, pool, log, cancellationToken);
-            
-            return null;
+
+            return new ByteArrayContent(Array.Empty<byte>());
         }
 
         private static HttpMethod TranslateRequestMethod(string httpMethod)

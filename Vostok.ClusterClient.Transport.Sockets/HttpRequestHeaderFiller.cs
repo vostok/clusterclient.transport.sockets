@@ -14,17 +14,24 @@ namespace Vostok.ClusterClient.Transport.Sockets
     {
         public static void Fill(Request request, HttpRequestMessage message, TimeSpan timeout, ILog log)
         {
-            if (request.Headers != null)
+            try
             {
-                var canAssignDirectly = HttpHeadersUnlocker.TryUnlockRestrictedHeaders(message.Headers, log);
-                if (canAssignDirectly)
+                if (request.Headers != null)
                 {
-                    AssignHeadersDirectly(request.Headers, message.Headers);
+                    var canAssignDirectly = HttpHeadersUnlocker.TryUnlockRestrictedHeaders(message.Headers, log);
+                    if (canAssignDirectly)
+                    {
+                        AssignHeadersDirectly(request.Headers, message.Headers);
+                    }
+                    else
+                    {
+                        AssignHeadersThroughProperties(request.Headers, message);
+                    }
                 }
-                else
-                {
-                    //AssignHeadersThroughProperties(request.Headers, webRequest);
-                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
             }
 
             SetRequestTimeoutHeader(message.Headers, timeout);
@@ -36,18 +43,19 @@ namespace Vostok.ClusterClient.Transport.Sockets
         public static Headers Create(HttpResponseMessage responseMessage)
         {
             var headers = Headers.Empty;
-            
+
             foreach (var responseHeader in responseMessage.Headers)
-                headers = headers.Set(responseHeader.Key, string.Join(',', responseHeader.Value));
-            
+                headers = headers.Set(responseHeader.Key, string.Join(", ", responseHeader.Value));
+
             if (responseMessage.Content != null)
                 foreach (var contentHeader in responseMessage.Content.Headers)
-                    headers = headers.Set(contentHeader.Key, string.Join(',', contentHeader.Value));
+                    headers = headers.Set(contentHeader.Key, string.Join(", ", contentHeader.Value));
 
             return headers;
+            
         }
 
-        private static void AssignHeadersDirectly( Headers source,HttpHeaders target)
+        private static void AssignHeadersDirectly(Headers source, HttpHeaders target)
         {
             foreach (var header in source)
             {
@@ -58,6 +66,23 @@ namespace Vostok.ClusterClient.Transport.Sockets
             }
         }
 
+        private static void AssignHeadersThroughProperties(Headers headers, HttpRequestMessage message)
+        {
+            foreach (var header in headers)
+            {
+                if (NeedToSkipHeader(header.Name))
+                    continue;
+
+                if (IsContentHeader(header.Name))
+                {
+                    message.Content.Headers.Add(header.Name, header.Value);
+                    continue;
+                }
+
+                message.Headers.Add(header.Name, header.Value);
+            }
+        }
+        
         private static void SetRequestTimeoutHeader(HttpHeaders headers, TimeSpan timeout)
         {
             headers.Add(HeaderNames.RequestTimeout, timeout.Ticks.ToString());
@@ -65,7 +90,6 @@ namespace Vostok.ClusterClient.Transport.Sockets
 
         private static void TrySetClientIdentityHeader(HttpHeaders headers)
         {
-            
             if (!headers.Contains(HeaderNames.ClientApplication))
                 headers.Add(HeaderNames.ClientApplication, ClientIdentityCore.Get());
         }
@@ -84,6 +108,27 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 name.Equals(HeaderNames.Connection) ||
                 name.Equals(HeaderNames.Host) ||
                 name.Equals(HeaderNames.TransferEncoding);
+        }
+
+        private static bool IsContentHeader(string headerName)
+        {
+            switch (headerName)
+            {
+                case "Allow":
+                case "Content-Disposition":
+                case "Content-Encoding":
+                case "Content-Language":
+                case "Content-Length":
+                case "Content-Location":
+                case "Content-MD5":
+                case "Content-Range":
+                case "Content-Type":
+                case "Expires":
+                case "Last-Modified":
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
 }

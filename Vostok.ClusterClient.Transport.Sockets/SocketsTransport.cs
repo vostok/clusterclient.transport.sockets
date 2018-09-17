@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
@@ -40,7 +41,9 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 AllowAutoRedirect = settings.AllowAutoRedirect,
                 PooledConnectionIdleTimeout = settings.ConnectionIdleTimeout, //TODO
                 PooledConnectionLifetime = settings.TcpKeepAliveTime,
-                MaxConnectionsPerServer = settings.MaxConnectionsPerEndpoint
+                MaxConnectionsPerServer = settings.MaxConnectionsPerEndpoint,
+                AutomaticDecompression = DecompressionMethods.None,
+                UseCookies = false
             };
 
             if (settings.MaxResponseDrainSize.HasValue)

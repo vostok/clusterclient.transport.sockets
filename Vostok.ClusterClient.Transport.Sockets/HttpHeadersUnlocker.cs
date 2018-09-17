@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -67,6 +69,39 @@ namespace Vostok.ClusterClient.Transport.Sockets
                     log.Warn(error, "Failed to unlock HttpHeaders for unsafe assignment.");
 
                 return canUnlock = false;
+            }
+
+            return IsUnlocked();
+        }
+        
+        private static bool IsUnlocked()
+        {
+            (string name, string value)[] tests = 
+            {
+                ("Accept-Encoding", "gzip;q=1.0, identity; q=0.5, *;q=0"),
+                ("Content-Range", "bytes 200-1000/67589"),
+                ("Content-Language", "mi, en"),
+                ("Referer", "whatever")
+            };
+            
+            try
+            {
+                using (var request = new HttpRequestMessage())
+                {
+                    var headers = request.Headers;
+                    unlocker(request.Headers);
+
+                    foreach (var test in tests)
+                    {
+                        headers.Add(test.name, test.value);
+                        if (!headers.TryGetValues(test.name, out var v) || !string.Equals(v.FirstOrDefault(), test.value, StringComparison.Ordinal))
+                            return false;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                return false;
             }
 
             return true;
