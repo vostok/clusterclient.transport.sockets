@@ -40,7 +40,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 UseProxy = settings.Proxy != null,
                 AllowAutoRedirect = settings.AllowAutoRedirect,
                 PooledConnectionIdleTimeout = settings.ConnectionIdleTimeout, //TODO
-                PooledConnectionLifetime = settings.TcpKeepAliveTime,
+                PooledConnectionLifetime = settings.ConnectionLifetime,
                 MaxConnectionsPerServer = settings.MaxConnectionsPerEndpoint,
                 AutomaticDecompression = DecompressionMethods.None,
                 UseCookies = false
@@ -178,7 +178,6 @@ namespace Vostok.ClusterClient.Transport.Sockets
 
                 try
                 {
-
                     if (NeedToStreamResponseBody(contentLength))
                     {
                         return await GetResponseWithStreamAsync(state).ConfigureAwait(false);

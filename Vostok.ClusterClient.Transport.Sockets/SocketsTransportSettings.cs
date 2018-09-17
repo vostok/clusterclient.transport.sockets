@@ -29,9 +29,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
 
         public bool TcpKeepAliveEnabled { get; set; } = false;
 
-        public TimeSpan TcpKeepAliveTime { get; set; } = TimeSpan.FromSeconds(3);
-
-        public TimeSpan TcpKeepAlivePeriod { get; set; } = TimeSpan.FromSeconds(1);
+        public TimeSpan ConnectionLifetime { get; set; } = TimeSpan.FromSeconds(3);
 
         public Action<SocketsHttpHandler> Tune { get; set; } = null;
         
@@ -53,8 +51,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 RequestAbortTimeout = RequestAbortTimeout,
                 MaxConnectionsPerEndpoint = MaxConnectionsPerEndpoint,
                 TcpKeepAliveEnabled = TcpKeepAliveEnabled,
-                TcpKeepAlivePeriod = TcpKeepAlivePeriod,
-                TcpKeepAliveTime = TcpKeepAliveTime,
+                ConnectionLifetime = ConnectionLifetime,
                 MaxResponseDrainSize = MaxResponseDrainSize
             };
         }
