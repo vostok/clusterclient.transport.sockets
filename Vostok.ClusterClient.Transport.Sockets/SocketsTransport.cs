@@ -39,8 +39,14 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 UseProxy = settings.Proxy != null,
                 AllowAutoRedirect = settings.AllowAutoRedirect,
                 PooledConnectionIdleTimeout = settings.ConnectionIdleTimeout, //TODO
-                PooledConnectionLifetime = settings.TcpKeepAliveTime
+                PooledConnectionLifetime = settings.TcpKeepAliveTime,
+                MaxConnectionsPerServer = settings.MaxConnectionsPerEndpoint
             };
+
+            if (settings.MaxResponseDrainSize.HasValue)
+                handler.MaxResponseDrainSize = settings.MaxResponseDrainSize.Value;
+            
+            settings.Tune?.Invoke(handler);
             
             client = new HttpClient(handler, true);
 
@@ -50,38 +56,76 @@ namespace Vostok.ClusterClient.Transport.Sockets
         /// <inheritdoc />
         public async Task<Response> SendAsync(Request request, TimeSpan timeout, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+                return Responses.Canceled;
+            
             if (timeout.TotalMilliseconds < 1)
             {
                 LogRequestTimeout(request, timeout);
-                return new Response(ResponseCode.RequestTimeout);
+                return Responses.Timeout;
             }
+
+            using (var timeoutCancellation = new CancellationTokenSource())
+            using (var requestCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+            {
+                var timeoutTask = Task.Delay(timeout, timeoutCancellation.Token);
+                var senderTask = SendInternalAsync(request, timeout, requestCancellation.Token);
+                var completedTask = await Task.WhenAny(timeoutTask, senderTask).ConfigureAwait(false);
+                if (completedTask is Task<Response> taskWithResponse)
+                {
+                    timeoutCancellation.Cancel();
+                    return taskWithResponse.GetAwaiter().GetResult();
+                }
+
+                // (iloktionov): Если выполнившееся задание не кастуется к Task<Response>, сработал таймаут.
+                requestCancellation.Cancel();
+                LogRequestTimeout(request, timeout);
+
+                // (iloktionov): Попытаемся дождаться завершения задания по отправке запроса перед тем, как возвращать результат:
+                var senderTaskContinuation = senderTask.ContinueWith(
+                    t =>
+                    {
+                        if (t.IsCompleted)
+                            t.GetAwaiter().GetResult().Dispose();
+                    });
+
+                using (var abortCancellation = new CancellationTokenSource())
+                {
+                    var abortWaitingDelay = Task.Delay(Settings.RequestAbortTimeout, abortCancellation.Token);
+
+                    await Task.WhenAny(senderTaskContinuation, abortWaitingDelay).ConfigureAwait(false);
+                    
+                    abortCancellation.Cancel();
+                }
+
+                if (!senderTask.IsCompleted)
+                    LogFailedToWaitForRequestAbort();
+
+                return Responses.Timeout;
+            }
+        }
+
+        private async Task<Response> SendInternalAsync(Request request, TimeSpan timeout, CancellationToken cancellationToken)
+        {
             var sw = Stopwatch.StartNew();
             
             for (var i = 0; i < settings.ConnectionAttempts; i++)
             {
+                if (cancellationToken.IsCancellationRequested)
+                    return Responses.Canceled;
+                
                 var attemptTimeout = timeout - sw.Elapsed;
-                if (attemptTimeout < TimeSpan.Zero)
+                if (attemptTimeout.TotalMilliseconds < 1)
+                {
+                    LogRequestTimeout(request, timeout);
                     return new Response(ResponseCode.RequestTimeout);
+                }
 
                 try
                 {
-                    using (var timeoutCts = new CancellationTokenSource())
-                    using (var attemptCts = new CancellationTokenSource())
-                    using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, attemptCts.Token))
-                    {
-                        var sendTask = SendOnceAsync(request, timeout, linkedCts);
-                        var timeoutTask = Task.Delay(timeout, linkedCts.Token);
-                        if (await Task.WhenAny(sendTask, timeoutTask) == timeoutTask)
-                        {
-                            attemptCts.Cancel();
-                            continue;
-                        }
-
-                        timeoutCts.Cancel();
-                        var response = sendTask.GetAwaiter().GetResult();
-                        if (response != null)
-                            return response;
-                    }
+                    var response = await SendOnceAsync(request, attemptTimeout, cancellationToken).ConfigureAwait(false);
+                    if (response != null)
+                        return response;
                 }
                 catch (StreamAlreadyUsedException)
                 {
@@ -97,23 +141,21 @@ namespace Vostok.ClusterClient.Transport.Sockets
             return new Response(ResponseCode.ConnectFailure);
         }
 
-        private async Task<Response> SendOnceAsync(Request request, TimeSpan timeout, CancellationTokenSource cancellationTokenSource)
+        private async Task<Response> SendOnceAsync(Request request, TimeSpan timeout, CancellationToken cancellationToken)
         {
-            using (var state = new RequestState(timeout, cancellationTokenSource))
+            using (var state = new RequestState(request))
             {
                 // should create new HttpRequestMessage per attempt
-                state.Request = request;
-                state.RequestMessage = requestFactory.Create(request, timeout, cancellationTokenSource.Token);
+                state.RequestMessage = requestFactory.Create(request, timeout, cancellationToken);
 
                 try
                 {
-                    state.ResponseMessage = await client.SendAsync(state.RequestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationTokenSource.Token).ConfigureAwait(false);
-
+                    state.ResponseMessage = await client
+                        .SendAsync(state.RequestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+                        .ConfigureAwait(false);
                 }
-                catch (HttpRequestException e) when (e.InnerException is SocketException se && IsConnectionFailure(se.SocketErrorCode) ||
-                                                     e.InnerException is TaskCanceledException)
+                catch (HttpRequestException e) when (IsConnectionTimeout(e))
                 {
-                    // connection timeout
                     return null;
                 }
                 catch (OperationCanceledException)
@@ -144,10 +186,10 @@ namespace Vostok.ClusterClient.Transport.Sockets
                         if (contentLength > settings.MaxResponseBodySize)
                             return new Response(ResponseCode.InsufficientStorage, headers: state.Headers);
 
-                        return await GetResponseWithKnownContentLength(state, (int) contentLength, cancellationTokenSource.Token).ConfigureAwait(false);
+                        return await GetResponseWithKnownContentLength(state, (int) contentLength, cancellationToken).ConfigureAwait(false);
                     }
 
-                    return await GetResponseWithUnknownContentLength(state, cancellationTokenSource.Token);
+                    return await GetResponseWithUnknownContentLength(state, cancellationToken);
                 }
                 catch (OperationCanceledException)
                 {
@@ -159,6 +201,9 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 }
             }
         }
+
+        private static bool IsConnectionTimeout(HttpRequestException e) => e.InnerException is SocketException se && IsConnectionFailure(se.SocketErrorCode) ||
+                                                                           e.InnerException is TaskCanceledException;
 
         private async Task<Response> GetResponseWithUnknownContentLength(RequestState state, CancellationToken cancellationToken)
         {
@@ -279,6 +324,11 @@ namespace Vostok.ClusterClient.Transport.Sockets
         private void LogReceiveBodyFailure(Request request, Exception error)
         {
             log.Error(error, "Error in receiving request body from " + request.Url.Authority);
+        }
+        
+        private void LogFailedToWaitForRequestAbort()
+        {
+            log.Warn($"Timed out request was aborted but did not complete in {Settings.RequestAbortTimeout.ToPrettyString()}.");
         }
 
         private static bool IsConnectionFailure(SocketError socketError)

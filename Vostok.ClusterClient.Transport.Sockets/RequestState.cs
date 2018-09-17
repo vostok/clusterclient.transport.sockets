@@ -9,17 +9,11 @@ namespace Vostok.ClusterClient.Transport.Sockets
 {
     internal class RequestState : IDisposable
     {
-        private readonly TimeSpan timeout;
-        private readonly CancellationTokenSource cancellationTokenSource;
-        private readonly Stopwatch stopwatch;
-        private int cancellationState;
         private int disposeBarrier;
 
-        public RequestState(TimeSpan timeout, CancellationTokenSource cancellationTokenSource)
+        public RequestState(Request request)
         {
-            this.timeout = timeout;
-            this.cancellationTokenSource = cancellationTokenSource;
-            stopwatch = Stopwatch.StartNew();
+            Request = request;
         }
 
         public HttpRequestMessage RequestMessage { get; set; }
@@ -27,37 +21,8 @@ namespace Vostok.ClusterClient.Transport.Sockets
 
         public Headers Headers { get; set; }
 
-        public TimeSpan TimeRemaining
-        {
-            get
-            {
-                var remaining = timeout - stopwatch.Elapsed;
-                return remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero;
-            }
-        }
-        public bool RequestCancelled => cancellationState > 0;
-        
         public ResponseCode ResponseCode { get; set; }
         public Request Request { get; set; }
-
-        public void CancelRequest()
-        {
-            Interlocked.Exchange(ref cancellationState, 1);
-
-            CancelRequestAttempt();
-        }
-
-        public void CancelRequestAttempt()
-        {
-            if (RequestMessage != null)
-                try
-                {
-                    cancellationTokenSource.Cancel();
-                }
-                catch
-                {
-                }
-        }
 
         public void PreventNextDispose()
         {

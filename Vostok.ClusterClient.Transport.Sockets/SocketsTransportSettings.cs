@@ -7,10 +7,6 @@ namespace Vostok.ClusterClient.Transport.Sockets
 {
     public class SocketsTransportSettings
     {
-        public bool Pipelined { get; set; } = true;
-
-        public bool FixThreadPoolProblems { get; set; } = true;
-
         public int ConnectionAttempts { get; set; } = 2;
 
         public TimeSpan? ConnectionTimeout { get; set; } = TimeSpan.FromMilliseconds(750);
@@ -24,10 +20,10 @@ namespace Vostok.ClusterClient.Transport.Sockets
         public int MaxConnectionsPerEndpoint { get; set; } = 10 * 1000;
 
         public long? MaxResponseBodySize { get; set; } = null;
+        
+        public int? MaxResponseDrainSize { get; set; } = null;
 
         public Predicate<long?> UseResponseStreaming { get; set; } = _ => false;
-
-        public string ConnectionGroupName { get; set; } = null;
 
         public bool AllowAutoRedirect { get; set; } = false;
 
@@ -37,15 +33,9 @@ namespace Vostok.ClusterClient.Transport.Sockets
 
         public TimeSpan TcpKeepAlivePeriod { get; set; } = TimeSpan.FromSeconds(1);
 
-        public bool ArpCacheWarmupEnabled { get; set; } = false;
-
-        public X509Certificate2[] ClientCertificates { get; set; } = null;
-
         public Action<SocketsHttpHandler> Tune { get; set; } = null;
         
         internal Func<int, byte[]> BufferFactory { get; set; } = size => new byte[size];
-
-        internal bool FixNonAsciiHeaders { get; set; } = false;
 
         internal SocketsTransportSettings Clone()
         {
@@ -56,36 +46,17 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 BufferFactory = BufferFactory,
                 Proxy = Proxy,
                 ConnectionAttempts = ConnectionAttempts,
-                ClientCertificates = ClientCertificates,
                 ConnectionTimeout = ConnectionTimeout,
-                Pipelined = Pipelined,
                 Tune = Tune,
                 AllowAutoRedirect = AllowAutoRedirect,
-                ConnectionGroupName = ConnectionGroupName,
                 ConnectionIdleTimeout = ConnectionIdleTimeout,
                 RequestAbortTimeout = RequestAbortTimeout,
-                ArpCacheWarmupEnabled = ArpCacheWarmupEnabled,
-                FixNonAsciiHeaders = FixNonAsciiHeaders,
-                FixThreadPoolProblems = FixThreadPoolProblems,
                 MaxConnectionsPerEndpoint = MaxConnectionsPerEndpoint,
                 TcpKeepAliveEnabled = TcpKeepAliveEnabled,
                 TcpKeepAlivePeriod = TcpKeepAlivePeriod,
-                TcpKeepAliveTime = TcpKeepAliveTime
+                TcpKeepAliveTime = TcpKeepAliveTime,
+                MaxResponseDrainSize = MaxResponseDrainSize
             };
         }
-    }
-
-    internal enum HttpActionStatus
-    {
-        Success,
-        ConnectionFailure,
-        SendFailure,
-        ReceiveFailure,
-        Timeout,
-        RequestCanceled,
-        ProtocolError,
-        UnknownFailure,
-        InsufficientStorage,
-        UserStreamFailure
     }
 }
