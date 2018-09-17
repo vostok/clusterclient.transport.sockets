@@ -135,5 +135,43 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
                 response.Content.Length.Should().Be(1234);
             }
         }
+
+        [TestCase(1024*1024, 10)]
+        [TestCase(1024*1024, 100)]
+        [TestCase(1024*1024, 1024)]
+        public void Should_support_response_streaming(int chunkSize, int chunksCount)
+        {
+            transport.Settings.UseResponseStreaming = _ => true;
+
+            using (var server = TestServer.StartNew(
+                ctx =>
+                {
+                    var buffer = new byte[chunkSize];
+                    ctx.Response.StatusCode = 200;
+                    for (var i = 0; i < chunksCount; ++i)
+                    {
+                        ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
+                    }
+                }))
+            {
+                using (var response = Send(Request.Put(server.Url)))
+                {
+                    response.Code.Should().Be(ResponseCode.Ok);
+                    response.HasContent.Should().BeFalse();
+                    response.HasStream.Should().BeTrue();
+                    var bytesRead = 0L;
+                    var buffer = new byte[16 * Constants.Kilobytes];
+                    while (true)
+                    {
+                        var size = response.Stream.Read(buffer);
+                        bytesRead += size;
+                        if (size <= 0)
+                            break;
+                    }
+
+                    bytesRead.Should().Be(chunkSize * (long) chunksCount);
+                }
+            }
+        }
     }
 }
