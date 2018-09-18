@@ -26,8 +26,14 @@ namespace Vostok.ClusterClient.Transport.Sockets
         private readonly HttpClient client;
         private readonly HttpRequestMessageFactory requestFactory;
 
+        /// <inheritdoc />
         public TransportCapabilities Capabilities { get; } = TransportCapabilities.RequestStreaming | TransportCapabilities.ResponseStreaming;
 
+        /// <summary>
+        /// Creates ClusterClient transport for .NET Core 2.1 and later based on <see cref="SocketsHttpHandler"/>
+        /// </summary>
+        /// <param name="settings"></param>
+        /// <param name="log"></param>
         public SocketsTransport(SocketsTransportSettings settings, ILog log)
         {
             settings = settings.Clone();
@@ -82,11 +88,11 @@ namespace Vostok.ClusterClient.Transport.Sockets
                     return taskWithResponse.GetAwaiter().GetResult();
                 }
 
-                // (iloktionov): Если выполнившееся задание не кастуется к Task<Response>, сработал таймаут.
+                // completedTask is timeout Task
                 requestCancellation.Cancel();
                 LogRequestTimeout(request, timeout);
 
-                // (iloktionov): Попытаемся дождаться завершения задания по отправке запроса перед тем, как возвращать результат:
+                // wait for cancellation & dispose resources associated with Response object
                 var senderTaskContinuation = senderTask.ContinueWith(
                     t =>
                     {

@@ -25,7 +25,6 @@ namespace Vostok.ClusterClient.Transport.Sockets
     
     internal class RequestStreamContent : HttpContent
     {
-        private readonly RequestState state;
         private readonly ILog log;
         private readonly CancellationToken cancellationToken;
         private readonly Request request;
@@ -117,12 +116,12 @@ namespace Vostok.ClusterClient.Transport.Sockets
 
         private void LogSendBodyFailure(Uri uri, Exception error)
         {
-            log.Error("Error in sending request body to " + uri.Authority, error);
+            log.Error(error, "Error in sending request body to " + uri.Authority);
         }
 
         private void LogUserStreamFailure(Exception error)
         {
-            log.Error("Failure in reading input stream while sending request body.", error);
+            log.Error(error, "Failure in reading input stream while sending request body.");
         }
     }
 }
