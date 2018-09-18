@@ -15,8 +15,12 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
         [Test]
         public void Should_timeout_on_connection_to_a_blackhole_by_connect_timeout()
         {
-            transport.Settings.ConnectionAttempts = 3;
-            transport.Settings.ConnectionTimeout = 250.Milliseconds();
+            SetSettings(
+                s =>
+                {
+                    s.ConnectionAttempts = 3;
+                    s.ConnectionTimeout = 250.Milliseconds();
+                });
 
             var task = SendAsync(Request.Get(dummyServerUrl));
 
@@ -28,8 +32,12 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
         [Test]
         public void Should_timeout_on_connection_to_a_blackhole_by_full_timeout()
         {
-            transport.Settings.ConnectionAttempts = 3;
-            transport.Settings.ConnectionTimeout = 1.Seconds();
+            SetSettings(
+                s =>
+                {
+                    s.ConnectionAttempts = 3;
+                    s.ConnectionTimeout = 1.Seconds();
+                });
 
             var task = SendAsync(Request.Get(dummyServerUrl), 500.Milliseconds());
 
@@ -48,8 +56,13 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
                     ctx.Response.StatusCode = 200;
                 }))
             {
-                transport.Settings.ConnectionAttempts = 3;
-                transport.Settings.ConnectionTimeout = 250.Milliseconds();
+                SetSettings(
+                    s =>
+                    {
+                        s.ConnectionAttempts = 3;
+                        s.ConnectionTimeout = 250.Milliseconds();
+                    });
+
 
                 Send(Request.Get(server.Url)).Code.Should().Be(ResponseCode.Ok);
             }

@@ -25,7 +25,9 @@ namespace Vostok.ClusterClient.Transport.Sockets
         private readonly IPool<byte[]> pool;
         private readonly HttpClient client;
         private readonly HttpRequestMessageFactory requestFactory;
-        
+
+        public TransportCapabilities Capabilities { get; } = TransportCapabilities.RequestStreaming | TransportCapabilities.ResponseStreaming;
+
         public SocketsTransport(SocketsTransportSettings settings, ILog log)
         {
             settings = settings.Clone();
@@ -94,7 +96,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
 
                 using (var abortCancellation = new CancellationTokenSource())
                 {
-                    var abortWaitingDelay = Task.Delay(Settings.RequestAbortTimeout, abortCancellation.Token);
+                    var abortWaitingDelay = Task.Delay(settings.RequestAbortTimeout, abortCancellation.Token);
 
                     await Task.WhenAny(senderTaskContinuation, abortWaitingDelay).ConfigureAwait(false);
                     
@@ -296,7 +298,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
         {
             try
             {
-                return Settings.UseResponseStreaming(length);
+                return settings.UseResponseStreaming(length);
             }
             catch (Exception error)
             {
@@ -304,7 +306,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 return false;
             }
         }
-        
+
         private async Task<Response> GetResponseWithStreamAsync(RequestState state)
         {
             var stream = await state.ResponseMessage.Content.ReadAsStreamAsync().ConfigureAwait(false);
@@ -327,10 +329,10 @@ namespace Vostok.ClusterClient.Transport.Sockets
         {
             log.Error(error, "Error in receiving request body from " + request.Url.Authority);
         }
-        
+
         private void LogFailedToWaitForRequestAbort()
         {
-            log.Warn($"Timed out request was aborted but did not complete in {Settings.RequestAbortTimeout.ToPrettyString()}.");
+            log.Warn($"Timed out request was aborted but did not complete in {settings.RequestAbortTimeout.ToPrettyString()}.");
         }
 
         private static bool IsConnectionFailure(SocketError socketError)
@@ -345,9 +347,6 @@ namespace Vostok.ClusterClient.Transport.Sockets
                     return false;
             }
         }
-
-        public TransportCapabilities Capabilities { get; } = TransportCapabilities.RequestStreaming | TransportCapabilities.ResponseStreaming;
-        internal SocketsTransportSettings Settings => settings;
 
         /// <inheritdoc />
         public void Dispose()

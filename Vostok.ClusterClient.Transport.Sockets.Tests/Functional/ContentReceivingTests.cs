@@ -72,7 +72,7 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
         [Test]
         public void Should_return_http_517_when_response_body_size_is_larger_than_configured_limit_when_content_length_is_known()
         {
-            transport.Settings.MaxResponseBodySize = Constants.Kilobytes;
+            SetSettings(s => s.MaxResponseBodySize = Constants.Kilobytes);
 
             var content = ThreadSafeRandom.NextBytes(Constants.Kilobytes + 1);
 
@@ -94,7 +94,7 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
         [Test]
         public void Should_return_http_517_when_response_body_size_is_larger_than_configured_limit_when_content_length_is_unknown()
         {
-            transport.Settings.MaxResponseBodySize = Constants.Kilobytes;
+            SetSettings(s => s.MaxResponseBodySize = Constants.Kilobytes);
 
             var content = ThreadSafeRandom.NextBytes(Constants.Kilobytes + 1);
 
@@ -115,8 +115,7 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
         [Test]
         public void Should_return_response_with_correct_content_length_when_buffer_factory_is_overriden()
         {
-            transport.Settings.BufferFactory = size => new byte[size * 2];
-
+            SetSettings(s => s.BufferFactory = size => new byte[size * 2]);
             var content = ThreadSafeRandom.NextBytes(1234);
 
             using (var server = TestServer.StartNew(
@@ -141,7 +140,7 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
         [TestCase(1024*1024, 1024)]
         public void Should_support_response_streaming(int chunkSize, int chunksCount)
         {
-            transport.Settings.UseResponseStreaming = _ => true;
+            SetSettings(s => s.UseResponseStreaming = _ => true);
 
             using (var server = TestServer.StartNew(
                 ctx =>
