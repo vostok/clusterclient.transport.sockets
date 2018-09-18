@@ -354,7 +354,6 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 case SocketError.AddressNotAvailable:
                     return true;
                 default:
-                    Console.WriteLine(socketError);
                     return false;
             }
         }

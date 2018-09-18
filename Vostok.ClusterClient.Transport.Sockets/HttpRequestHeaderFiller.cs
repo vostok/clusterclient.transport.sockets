@@ -31,7 +31,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                log.ForContext(typeof(HeadersConverter)).Error(e);
             }
 
             SetRequestTimeoutHeader(message.Headers, timeout);
