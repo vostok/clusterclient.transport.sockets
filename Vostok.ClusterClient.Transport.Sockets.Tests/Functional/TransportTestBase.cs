@@ -37,5 +37,12 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
         {
             return transport.SendAsync(request, timeout ?? 1.Minutes(), cancellationToken).GetAwaiter().GetResult();
         }
+
+        protected void SetSettings(Action<SocketsTransportSettings> update)
+        {
+            var settings = new SocketsTransportSettings();
+            update(settings);
+            transport = new SocketsTransport(settings, log);
+        }
     }
 }
