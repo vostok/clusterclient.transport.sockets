@@ -250,7 +250,12 @@ namespace Vostok.ClusterClient.Transport.Sockets
                     
                     var totalBytesRead = 0;
 
-                    // TODO: check .net core socket behavior
+                    // Reference to buffer used in ReadAsync will be stored in Socket instance. We want to avoid long-lived buffers in LOH
+                    // gcroot sample output for buffer used in .ReadAsync:
+                    // -> System.Net.Sockets.Socket
+                    // -> System.Net.Sockets.Socket+CachedEventArgs
+                    // -> System.Net.Sockets.Socket+AwaitableSocketAsyncEventArgs
+                    // -> System.Byte[]
                     if (contentLength < LOHObjectSizeThreshold)
                     {
                         while (totalBytesRead < contentLength)
