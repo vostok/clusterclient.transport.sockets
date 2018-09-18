@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
 using Vostok.ClusterClient.Core.Model;
@@ -122,6 +124,19 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
                 var response = Send(request);
 
                 response.Code.Should().Be(ResponseCode.StreamInputFailure);
+            }
+        }
+
+        [Test]
+        public void Should_timeout_on_hang_stream()
+        {
+            using (var server = TestServer.StartNew(ctx => ctx.Response.StatusCode = 200))
+            {
+                var request = Request.Put(server.Url).WithContent(new HangStream());
+
+                var response = Send(request, TimeSpan.FromSeconds(0.5));
+
+                response.Code.Should().Be(ResponseCode.RequestTimeout);
             }
         }
 
@@ -251,6 +266,51 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
 
         #endregion
         
-        
+        #region HangStream
+
+        private class HangStream : Stream
+        {
+            public override void Flush()
+            {
+            }
+
+            public override long Seek(long offset, SeekOrigin origin)
+            {
+                throw new NotSupportedException();
+            }
+
+            public override void SetLength(long value)
+            {
+                throw new NotSupportedException();
+            }
+
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                throw new NotSupportedException();
+            }
+
+            public override void Write(byte[] buffer, int offset, int count)
+            {
+                throw new NotSupportedException();
+            }
+
+            public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+            {
+                cancellationToken.WaitHandle.WaitOne();
+                return Task.FromResult(0);
+            }
+
+            public override bool CanRead => true;
+            public override bool CanSeek => false;
+            public override bool CanWrite => false;
+            public override long Length => throw new NotSupportedException();
+            public override long Position
+            {
+                get => throw new NotSupportedException();
+                set => throw new NotSupportedException();
+            }
+        }
+
+        #endregion
     }
 }

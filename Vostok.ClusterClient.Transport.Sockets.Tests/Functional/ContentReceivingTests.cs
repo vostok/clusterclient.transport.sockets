@@ -148,6 +148,7 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
                 {
                     var buffer = new byte[chunkSize];
                     ctx.Response.StatusCode = 200;
+                    ctx.Response.SendChunked = true;
                     for (var i = 0; i < chunksCount; ++i)
                     {
                         ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
