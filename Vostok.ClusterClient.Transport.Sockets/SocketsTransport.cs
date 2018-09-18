@@ -41,7 +41,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 ConnectTimeout = settings.ConnectionTimeout ?? TimeSpan.FromMinutes(2),
                 UseProxy = settings.Proxy != null,
                 AllowAutoRedirect = settings.AllowAutoRedirect,
-                PooledConnectionIdleTimeout = settings.ConnectionIdleTimeout, //TODO
+                PooledConnectionIdleTimeout = settings.ConnectionIdleTimeout,
                 PooledConnectionLifetime = settings.ConnectionLifetime,
                 MaxConnectionsPerServer = settings.MaxConnectionsPerEndpoint,
                 AutomaticDecompression = DecompressionMethods.None,
