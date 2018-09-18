@@ -67,5 +67,41 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
                 Send(Request.Get(server.Url)).Code.Should().Be(ResponseCode.Ok);
             }
         }
+        
+        [Test]
+        public void Should_not_timeout_if_any_attempts_are_available()
+        {
+            SetSettings(
+                s =>
+                {
+                    s.ConnectionAttempts = 3;
+                    s.ConnectionTimeout = 1.Seconds();
+                });
+
+            var task = SendAsync(Request.Get(dummyServerUrl));
+
+            task.Wait(2.Seconds());
+
+            task.IsCompleted.Should().BeFalse();
+        }
+        
+        [Test]
+        public void Should_timeout_by_request_timeout_first()
+        {
+            SetSettings(
+                s =>
+                {
+                    s.ConnectionAttempts = 1;
+                    s.ConnectionTimeout = 10.Seconds();
+                });
+
+            var task = SendAsync(Request.Get(dummyServerUrl), 500.Milliseconds());
+
+            task.Wait(1.Seconds());
+
+            task.IsCompleted.Should().BeTrue();
+
+            task.Result.Code.Should().Be(ResponseCode.RequestTimeout);
+        }
     }
 }
