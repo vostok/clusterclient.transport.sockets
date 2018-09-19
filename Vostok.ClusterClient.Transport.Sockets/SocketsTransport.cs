@@ -80,7 +80,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
             using (var requestCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
             {
                 var timeoutTask = Task.Delay(timeout, timeoutCancellation.Token);
-                var senderTask = SendInternalAsync(request, timeout, requestCancellation.Token);
+                var senderTask = SendInternalAsync(request, timeout, requestCancellation);
                 var completedTask = await Task.WhenAny(timeoutTask, senderTask).ConfigureAwait(false);
                 if (completedTask is Task<Response> taskWithResponse)
                 {
@@ -116,13 +116,13 @@ namespace Vostok.ClusterClient.Transport.Sockets
             }
         }
 
-        private async Task<Response> SendInternalAsync(Request request, TimeSpan timeout, CancellationToken cancellationToken)
+        private async Task<Response> SendInternalAsync(Request request, TimeSpan timeout, CancellationTokenSource cancellationTokenSource)
         {
             var sw = Stopwatch.StartNew();
             
             for (var i = 0; i < settings.ConnectionAttempts; i++)
             {
-                if (cancellationToken.IsCancellationRequested)
+                if (cancellationTokenSource.IsCancellationRequested)
                     return Responses.Canceled;
                 
                 var attemptTimeout = timeout - sw.Elapsed;
@@ -134,9 +134,17 @@ namespace Vostok.ClusterClient.Transport.Sockets
 
                 try
                 {
-                    var response = await SendOnceAsync(request, attemptTimeout, cancellationToken).ConfigureAwait(false);
-                    if (response != null)
-                        return response;
+                    try
+                    {
+                        var response = await SendOnceAsync(request, attemptTimeout, cancellationTokenSource.Token).ConfigureAwait(false);
+                        if (response != null)
+                            return response;
+                    }
+                    catch (Exception)
+                    {
+                        cancellationTokenSource.Cancel();
+                        throw;
+                    }
                 }
                 catch (StreamAlreadyUsedException)
                 {
