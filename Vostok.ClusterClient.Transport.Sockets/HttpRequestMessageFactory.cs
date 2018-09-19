@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.Design;
 using System.Net.Http;
 using System.Threading;
 using Vostok.ClusterClient.Core.Model;
@@ -19,10 +20,12 @@ namespace Vostok.ClusterClient.Transport.Sockets
             this.log = log;
         }
 
-        public HttpRequestMessage Create(Request request, TimeSpan timeout, CancellationToken cancellationToken)
+        public HttpRequestMessage Create(Request request, TimeSpan timeout, CancellationToken cancellationToken, out SendContext sendContext)
         {
+            sendContext = new SendContext();
+            
             var method = TranslateRequestMethod(request.Method);
-            var content = CreateContent(request, cancellationToken);
+            var content = CreateContent(request, sendContext, cancellationToken);
 
             var message = new HttpRequestMessage(method, request.Url)
             {
@@ -34,17 +37,17 @@ namespace Vostok.ClusterClient.Transport.Sockets
             return message;
         }
 
-        private HttpContent CreateContent(Request request, CancellationToken cancellationToken)
+        private HttpContent CreateContent(Request request, SendContext sendContext, CancellationToken cancellationToken)
         {
             var content = request.Content;
             var streamContent = request.StreamContent;
 
             if (content != null)
-                return new RequestByteArrayContent(request, log, cancellationToken);
+                return new RequestByteArrayContent(request, sendContext, log, cancellationToken);
             if (streamContent != null)
-                return new RequestStreamContent(request, pool, log, cancellationToken);
+                return new RequestStreamContent(request, sendContext, pool, log, cancellationToken);
 
-            return new ByteArrayContent(Array.Empty<byte>());
+            return new RequestEmptyContent(sendContext, log);
         }
 
         private static HttpMethod TranslateRequestMethod(string httpMethod)

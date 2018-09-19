@@ -11,39 +11,35 @@ namespace Vostok.ClusterClient.Transport.Sockets
     internal static class HttpHeadersUnlocker
     {
         private static readonly object sync = new object();
-        private static Action<HttpHeaders> unlocker;
-        private static volatile State state;
+        private static readonly Action<HttpHeaders> empty = delegate {  };
+        private static volatile Action<HttpHeaders> unlocker;
 
         public static bool TryUnlockRestrictedHeaders(HttpHeaders headers, ILog log)
         {
             EnsureInitialized(log);
-            
-            if (state == State.Broken)
-                return false;
-
             return TryUnlockRestrictedHeadersInternal(headers, log);
         }
 
         private static void EnsureInitialized(ILog log)
         {
-            if (state == State.NotInitialized)
+            if (unlocker == null)
             {
                 lock (sync)
                 {
-                    if (state == State.NotInitialized)
-                        BuildUnlocker(log);
+                    if (unlocker == null)
+                        unlocker = BuildUnlocker(log);
                 }
             }
         }
 
-        private static void BuildUnlocker(ILog log)
+        private static Action<HttpHeaders> BuildUnlocker(ILog log)
         {
             try
             {
                 var allowLambda = CreateAssignment<HttpHeaders>("_allowedHeaderTypes", BindingFlags.Instance | BindingFlags.NonPublic, (int) HttpHeaderType.Custom);
                 var treatLambda = CreateAssignment<HttpHeaders>("_treatAsCustomHeaderTypes", BindingFlags.Instance | BindingFlags.NonPublic, (int) HttpHeaderType.All);
 
-                unlocker = h =>
+                return h =>
                 {
                     allowLambda(h);
                     treatLambda(h);
@@ -52,12 +48,8 @@ namespace Vostok.ClusterClient.Transport.Sockets
             catch (Exception e)
             {
                 log.ForContext(typeof(HttpHeadersUnlocker)).Error(e, "Can't unlock HttpHeaders");
-                unlocker = null;
+                return empty;
             }
-
-            state = unlocker != null && Test(log)
-                ? State.Ok
-                : State.Broken;
         }
 
         private static Action<TType> CreateAssignment<TType>(string field, BindingFlags bindingFlags, int value)
@@ -86,10 +78,10 @@ namespace Vostok.ClusterClient.Transport.Sockets
             }
             catch (Exception error)
             {
-                if (state == State.Ok)
+                if (unlocker != empty)
                     log.ForContext(typeof(HttpHeadersUnlocker)).Warn(error, "Failed to unlock HttpHeaders for unsafe assignment.");
 
-                state = State.Broken;
+                unlocker = empty;
                 return false;
             }
 
@@ -141,13 +133,6 @@ namespace Vostok.ClusterClient.Transport.Sockets
             }
 
             return true;
-        }
-
-        private enum State
-        {
-            NotInitialized,
-            Broken,
-            Ok
         }
     }
 }

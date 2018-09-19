@@ -27,13 +27,23 @@ namespace Vostok.ClusterClient.Transport.Sockets
 
         public bool AllowAutoRedirect { get; set; } = false;
 
-        public bool TcpKeepAliveEnabled { get; set; } = false;
-
         public TimeSpan ConnectionLifetime { get; set; } = TimeSpan.FromSeconds(3);
 
         public Action<SocketsHttpHandler> Tune { get; set; } = null;
         
         internal Func<int, byte[]> BufferFactory { get; set; } = size => new byte[size];
+        
+        public bool TcpKeepAliveEnabled { get; set; } = false;
+
+        /// <summary>
+        /// The duration between two keepalive transmissions in idle condition.
+        /// </summary>
+        public TimeSpan TcpKeepAliveTime { get; set; } = TimeSpan.FromSeconds(3);
+
+        /// <summary>
+        /// The duration between two successive keepalive retransmissions, if acknowledgement to the previous keepalive transmission is not received.
+        /// </summary>
+        public TimeSpan TcpKeepAliveInterval { get; set; } = TimeSpan.FromSeconds(1);
 
         internal SocketsTransportSettings Clone()
         {
@@ -52,7 +62,9 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 MaxConnectionsPerEndpoint = MaxConnectionsPerEndpoint,
                 TcpKeepAliveEnabled = TcpKeepAliveEnabled,
                 ConnectionLifetime = ConnectionLifetime,
-                MaxResponseDrainSize = MaxResponseDrainSize
+                MaxResponseDrainSize = MaxResponseDrainSize,
+                TcpKeepAliveInterval = TcpKeepAliveInterval,
+                TcpKeepAliveTime = TcpKeepAliveTime
             };
         }
     }

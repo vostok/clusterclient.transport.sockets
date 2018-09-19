@@ -12,6 +12,7 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
 {
     internal class ContentSendingTests : TransportTestsBase
     {
+        [TestCase(0)]
         [TestCase(1)]
         [TestCase(10)]
         [TestCase(500)]

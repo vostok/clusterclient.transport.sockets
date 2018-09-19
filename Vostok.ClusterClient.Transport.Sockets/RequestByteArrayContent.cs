@@ -9,20 +9,54 @@ using Vostok.Logging.Abstractions;
 
 namespace Vostok.ClusterClient.Transport.Sockets
 {
-    internal class RequestByteArrayContent : HttpContent
+    internal abstract class ClusterClientHttpContent : HttpContent
     {
-        private readonly Request request;
-        private readonly ILog log;
-        private readonly CancellationToken cancellationToken;
+        protected readonly SendContext SendContext;
+        protected readonly ILog Log;
 
-        public RequestByteArrayContent(Request request, ILog log, CancellationToken cancellationToken)
+        protected ClusterClientHttpContent(SendContext sendContext, ILog log)
         {
-            this.request = request;
-            this.log = log;
-            this.cancellationToken = cancellationToken;
+            this.SendContext = sendContext;
+            Log = log;
         }
 
-        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context)
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext context)
+        {
+            SendContext.Socket = SocketAccessor.GetSocket(stream, Log);
+            return SerializeAsync(stream, context);
+        }
+
+        protected abstract Task SerializeAsync(Stream stream, TransportContext context);
+    }
+
+    internal class RequestEmptyContent : ClusterClientHttpContent
+    {
+        public RequestEmptyContent(SendContext sendContext, ILog log)
+            : base(sendContext, log) => Headers.ContentLength = 0;
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return true;
+        }
+
+        protected override Task SerializeAsync(Stream stream, TransportContext context) => Task.CompletedTask;
+    }
+    
+    internal class RequestByteArrayContent : ClusterClientHttpContent
+    {
+        private readonly Request request;
+        private readonly CancellationToken cancellationToken;
+
+        public RequestByteArrayContent(Request request, SendContext context, ILog log, CancellationToken cancellationToken) : base(context, log)
+        {
+            this.request = request;
+            this.cancellationToken = cancellationToken;
+
+            Headers.ContentLength = request.Content.Length;
+        }
+
+        protected override async Task SerializeAsync(Stream stream, TransportContext context)
         {
             var content = request.Content;
             
@@ -38,7 +72,6 @@ namespace Vostok.ClusterClient.Transport.Sockets
             {
                 LogSendBodyFailure(request.Url, e);
             }
-            
         }
 
         protected override bool TryComputeLength(out long length)
@@ -49,8 +82,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
 
         private void LogSendBodyFailure(Uri uri, Exception error)
         {
-            log.Error(error, "Error in sending request body to " + uri.Authority);
+            Log.Error(error, "Error in sending request body to " + uri.Authority);
         }
-
     }
 }

@@ -25,6 +25,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
         private readonly IPool<byte[]> pool;
         private readonly HttpClient client;
         private readonly HttpRequestMessageFactory requestFactory;
+        private readonly byte[] keepAliveValues;
 
         /// <inheritdoc />
         public TransportCapabilities Capabilities { get; } = TransportCapabilities.RequestStreaming | TransportCapabilities.ResponseStreaming;
@@ -62,6 +63,8 @@ namespace Vostok.ClusterClient.Transport.Sockets
             client = new HttpClient(handler, true);
 
             requestFactory = new HttpRequestMessageFactory(pool, log);
+
+            keepAliveValues = GetKeepAliveValues(settings);
         }
 
         /// <inheritdoc />
@@ -165,7 +168,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
             using (var state = new RequestState(request))
             {
                 // should create new HttpRequestMessage per attempt
-                state.RequestMessage = requestFactory.Create(request, timeout, cancellationToken);
+                state.RequestMessage = requestFactory.Create(request, timeout, cancellationToken, out var sendContext);
 
                 try
                 {
@@ -181,10 +184,12 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 {
                     return Responses.Canceled;
                 }
-                catch (ResponseException e)
-                {
-                    return e.Response;
-                }
+
+                if (sendContext.Response != null)
+                    return sendContext.Response;
+
+                if (settings.TcpKeepAliveEnabled)
+                    sendContext.Socket?.IOControl(IOControlCode.KeepAliveValues, keepAliveValues, null);
 
                 state.ResponseCode = (ResponseCode) (int) state.ResponseMessage.StatusCode;
 
@@ -212,10 +217,6 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 catch (OperationCanceledException)
                 {
                     return Responses.Canceled;
-                }
-                catch (ResponseException e)
-                {
-                    return e.Response;
                 }
             }
         }
@@ -333,6 +334,31 @@ namespace Vostok.ClusterClient.Transport.Sockets
             state.PreventNextDispose();
             return new Response(state.ResponseCode, null, state.Headers, wrappedStream);
         }
+
+        private static byte[] GetKeepAliveValues(SocketsTransportSettings settings)
+        {
+            if (!settings.TcpKeepAliveEnabled)
+                return null;
+            
+            var tcpKeepAliveTime = (int) settings.TcpKeepAliveTime.TotalMilliseconds;
+            var tcpKeepAliveInterval = (int) settings.TcpKeepAliveInterval.TotalMilliseconds;
+
+            return new byte[]
+            {
+                1,
+                0,
+                0,
+                0,
+                (byte) (tcpKeepAliveTime & byte.MaxValue),
+                (byte) ((tcpKeepAliveTime >> 8) & byte.MaxValue),
+                (byte) ((tcpKeepAliveTime >> 16) & byte.MaxValue),
+                (byte) ((tcpKeepAliveTime >> 24) & byte.MaxValue),
+                (byte) (tcpKeepAliveInterval & byte.MaxValue),
+                (byte) ((tcpKeepAliveInterval >> 8) & byte.MaxValue),
+                (byte) ((tcpKeepAliveInterval >> 16) & byte.MaxValue),
+                (byte) ((tcpKeepAliveInterval >> 24) & byte.MaxValue)
+            };
+        } 
 
         private void LogRequestTimeout(Request request, TimeSpan timeout)
         {

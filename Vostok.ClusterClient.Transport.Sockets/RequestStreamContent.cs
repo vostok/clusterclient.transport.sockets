@@ -1,50 +1,36 @@
 using System;
-using System.Buffers;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Vostok.ClusterClient.Core.Model;
 using Vostok.ClusterClient.Transport.Webrequest.Pool;
-using Vostok.Commons.Collections;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.ClusterClient.Transport.Sockets
 {
-    internal class ResponseException : Exception
+    internal class RequestStreamContent : ClusterClientHttpContent
     {
-        public Response Response { get; }
-
-        public ResponseException(Response response)
-        {
-            Response = response;
-        }
-    }
-    
-    internal class RequestStreamContent : HttpContent
-    {
-        private readonly ILog log;
         private readonly CancellationToken cancellationToken;
         private readonly Request request;
         private readonly IPool<byte[]> arrayPool;
 
         public RequestStreamContent(
             Request request,
+            SendContext sendContext,
             IPool<byte[]> arrayPool,
             ILog log,
              CancellationToken cancellationToken)
+        : base(sendContext, log)
         {
             this.request = request;
             this.arrayPool = arrayPool;
-            this.log = log;
             this.cancellationToken = cancellationToken;
 
             Headers.ContentLength = request.StreamContent.Length;
         }
 
-        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context)
+        protected override async Task SerializeAsync(Stream stream, TransportContext context)
         {
             var streamContent = request.StreamContent;
             var bodyStream = streamContent.Stream;
@@ -76,7 +62,8 @@ namespace Vostok.ClusterClient.Transport.Sockets
                         catch (Exception error)
                         {
                             LogUserStreamFailure(error);
-                            throw new ResponseException(new Response(ResponseCode.StreamInputFailure));
+                            SendContext.Response = new Response(ResponseCode.StreamInputFailure);
+                            return;
                         }
 
                         if (bytesRead == 0)
@@ -96,14 +83,10 @@ namespace Vostok.ClusterClient.Transport.Sockets
             {
                 throw;
             }
-            catch (ResponseException)
-            {
-                throw;
-            }
             catch (Exception e)
             {
                 LogSendBodyFailure(request.Url, e);
-                throw new ResponseException(new Response(ResponseCode.SendFailure));
+                SendContext.Response = new Response(ResponseCode.SendFailure);
             }
         }
 
@@ -116,12 +99,12 @@ namespace Vostok.ClusterClient.Transport.Sockets
 
         private void LogSendBodyFailure(Uri uri, Exception error)
         {
-            log.Error(error, "Error in sending request body to " + uri.Authority);
+            Log.Error(error, "Error in sending request body to " + uri.Authority);
         }
 
         private void LogUserStreamFailure(Exception error)
         {
-            log.Error(error, "Failure in reading input stream while sending request body.");
+            Log.Error(error, "Failure in reading input stream while sending request body.");
         }
     }
 }
