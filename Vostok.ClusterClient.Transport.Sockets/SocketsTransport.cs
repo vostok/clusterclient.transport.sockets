@@ -386,6 +386,9 @@ namespace Vostok.ClusterClient.Transport.Sockets
             {
                 case SocketError.HostNotFound:
                 case SocketError.AddressNotAvailable:
+                // seen on linux:
+                case SocketError.ConnectionRefused:
+                case SocketError.TryAgain:
                     return true;
                 default:
                     return false;
