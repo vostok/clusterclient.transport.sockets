@@ -13,7 +13,7 @@ namespace Vostok.ClusterClient.Transport.Sockets.Utilities
         {
             try
             {
-                return Assembly.GetEntryAssembly().FullName;
+                return Assembly.GetEntryAssembly().GetName().Name;
             }
             catch (Exception)
             {
