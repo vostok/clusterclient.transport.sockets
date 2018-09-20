@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Vostok.ClusterClient.Core.Model;
@@ -64,7 +65,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
 
             requestFactory = new HttpRequestMessageFactory(pool, log);
 
-            keepAliveValues = GetKeepAliveValues(settings);
+            keepAliveValues = KeepAliveTuner.GetKeepAliveValues(settings);
         }
 
         /// <inheritdoc />
@@ -189,7 +190,11 @@ namespace Vostok.ClusterClient.Transport.Sockets
                     return sendContext.Response;
 
                 if (settings.TcpKeepAliveEnabled)
-                    sendContext.Socket?.IOControl(IOControlCode.KeepAliveValues, keepAliveValues, null);
+                {
+                    var socket = sendContext.Socket;
+                    if (socket != null)
+                        KeepAliveTuner.Tune(socket, settings, keepAliveValues);
+                }
 
                 state.ResponseCode = (ResponseCode) (int) state.ResponseMessage.StatusCode;
 
@@ -335,30 +340,6 @@ namespace Vostok.ClusterClient.Transport.Sockets
             return new Response(state.ResponseCode, null, state.Headers, wrappedStream);
         }
 
-        private static byte[] GetKeepAliveValues(SocketsTransportSettings settings)
-        {
-            if (!settings.TcpKeepAliveEnabled)
-                return null;
-            
-            var tcpKeepAliveTime = (int) settings.TcpKeepAliveTime.TotalMilliseconds;
-            var tcpKeepAliveInterval = (int) settings.TcpKeepAliveInterval.TotalMilliseconds;
-
-            return new byte[]
-            {
-                1,
-                0,
-                0,
-                0,
-                (byte) (tcpKeepAliveTime & byte.MaxValue),
-                (byte) ((tcpKeepAliveTime >> 8) & byte.MaxValue),
-                (byte) ((tcpKeepAliveTime >> 16) & byte.MaxValue),
-                (byte) ((tcpKeepAliveTime >> 24) & byte.MaxValue),
-                (byte) (tcpKeepAliveInterval & byte.MaxValue),
-                (byte) ((tcpKeepAliveInterval >> 8) & byte.MaxValue),
-                (byte) ((tcpKeepAliveInterval >> 16) & byte.MaxValue),
-                (byte) ((tcpKeepAliveInterval >> 24) & byte.MaxValue)
-            };
-        } 
 
         private void LogRequestTimeout(Request request, TimeSpan timeout)
         {
