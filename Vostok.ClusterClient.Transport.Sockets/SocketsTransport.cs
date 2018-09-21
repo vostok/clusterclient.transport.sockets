@@ -124,7 +124,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
         {
             var sw = Stopwatch.StartNew();
             
-            for (var attempt = 0; attempt < settings.ConnectionAttempts; attempt++)
+            for (var attempt = 1; attempt <= settings.ConnectionAttempts; attempt++)
             {
                 if (cancellationTokenSource.IsCancellationRequested)
                     return Responses.Canceled;
@@ -179,7 +179,11 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 }
                 catch (HttpRequestException e) when (IsConnectionTimeout(e))
                 {
-                    log.Warn(e, $"Connection failure. Target = {request.Url.Authority}. Attempt = {attempt}/{settings.ConnectionAttempts}.");
+                    var message = $"Connection failure. Target = {request.Url.Authority}. Attempt = {attempt}/{settings.ConnectionAttempts}.";
+                    if (attempt == settings.ConnectionAttempts)
+                        log.Error(e, message);
+                    else
+                        log.Warn(e, message);
                     return null;
                 }
                 catch (OperationCanceledException)
