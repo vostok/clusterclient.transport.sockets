@@ -34,6 +34,8 @@ namespace Vostok.ClusterClient.Transport.Sockets
         internal Func<int, byte[]> BufferFactory { get; set; } = size => new byte[size];
         
         public bool TcpKeepAliveEnabled { get; set; } = false;
+                
+        public bool ArpCacheWarmupEnabled { get; set; } = false;
 
         /// <summary>
         /// The duration between two keepalive transmissions in idle condition.

@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Vostok.ClusterClient.Core.Model;
 using Vostok.ClusterClient.Core.Transport;
+using Vostok.ClusterClient.Transport.Webrequest.ArpCache;
 using Vostok.ClusterClient.Transport.Webrequest.Pool;
 using Vostok.Commons.Helpers.Extensions;
 using Vostok.Logging.Abstractions;
@@ -190,15 +191,18 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 {
                     return Responses.Canceled;
                 }
-
-                if (sendContext.Response != null)
-                    return sendContext.Response;
-
-                if (settings.TcpKeepAliveEnabled)
+                var socket = sendContext.Socket;
+                if (socket != null)
                 {
-                    var socket = sendContext.Socket;
-                    if (socket != null)
+
+                    if (sendContext.Response != null)
+                        return sendContext.Response;
+
+                    if (settings.TcpKeepAliveEnabled)
                         KeepAliveTuner.Tune(socket, settings, keepAliveValues);
+                    
+                    if (settings.ArpCacheWarmupEnabled && socket.RemoteEndPoint is IPEndPoint ipEndPoint)
+                        ArpCacheMaintainer.ReportAddress(ipEndPoint.Address);
                 }
 
                 state.ResponseCode = (ResponseCode) (int) state.ResponseMessage.StatusCode;
