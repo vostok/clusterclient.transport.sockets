@@ -380,6 +380,11 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 // seen on linux:
                 case SocketError.ConnectionRefused:
                 case SocketError.TryAgain:
+                case SocketError.NetworkUnreachable:
+                // other:
+                case SocketError.NetworkDown:
+                case SocketError.HostDown:
+                case SocketError.HostUnreachable:
                     return true;
                 default:
                     return false;
