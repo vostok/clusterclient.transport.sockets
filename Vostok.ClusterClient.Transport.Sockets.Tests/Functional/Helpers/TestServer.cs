@@ -51,7 +51,7 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional.Helpers
                 {
                     while (true)
                     {
-                        var context = await listener.GetContextAsync();
+                        var context = await listener.GetContextAsync().ConfigureAwait(false);
 
                         Task.Run(
                             () =>

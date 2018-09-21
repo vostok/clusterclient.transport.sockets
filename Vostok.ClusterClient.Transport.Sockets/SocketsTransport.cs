@@ -124,7 +124,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
         {
             var sw = Stopwatch.StartNew();
             
-            for (var i = 0; i < settings.ConnectionAttempts; i++)
+            for (var attempt = 0; attempt < settings.ConnectionAttempts; attempt++)
             {
                 if (cancellationTokenSource.IsCancellationRequested)
                     return Responses.Canceled;
@@ -140,7 +140,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 {
                     try
                     {
-                        var response = await SendOnceAsync(request, attemptTimeout, cancellationTokenSource.Token).ConfigureAwait(false);
+                        var response = await SendOnceAsync(request, attempt, attemptTimeout, cancellationTokenSource.Token).ConfigureAwait(false);
                         if (response != null)
                             return response;
                     }
@@ -164,7 +164,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
             return new Response(ResponseCode.ConnectFailure);
         }
 
-        private async Task<Response> SendOnceAsync(Request request, TimeSpan timeout, CancellationToken cancellationToken)
+        private async Task<Response> SendOnceAsync(Request request, int attempt, TimeSpan timeout, CancellationToken cancellationToken)
         {
             using (var state = new RequestState(request))
             {
@@ -179,6 +179,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 }
                 catch (HttpRequestException e) when (IsConnectionTimeout(e))
                 {
+                    log.Warn(e, $"Connection failure. Target = {request.Url.Authority}. Attempt = {attempt}/{settings.ConnectionAttempts}.");
                     return null;
                 }
                 catch (OperationCanceledException)
@@ -217,7 +218,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
                         return await GetResponseWithKnownContentLength(state, (int) contentLength, cancellationToken).ConfigureAwait(false);
                     }
 
-                    return await GetResponseWithUnknownContentLength(state, cancellationToken);
+                    return await GetResponseWithUnknownContentLength(state, cancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
