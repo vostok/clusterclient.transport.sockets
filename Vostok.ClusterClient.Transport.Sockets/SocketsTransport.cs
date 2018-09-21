@@ -177,7 +177,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
                         .SendAsync(state.RequestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                         .ConfigureAwait(false);
                 }
-                catch (HttpRequestException e) when (IsConnectionTimeout(e))
+                catch (HttpRequestException e) when (IsConnectionTimeout(e, cancellationToken))
                 {
                     var message = $"Connection failure. Target = {request.Url.Authority}. Attempt = {attempt}/{settings.ConnectionAttempts}.";
                     if (attempt == settings.ConnectionAttempts)
@@ -231,8 +231,9 @@ namespace Vostok.ClusterClient.Transport.Sockets
             }
         }
 
-        private static bool IsConnectionTimeout(HttpRequestException e) => e.InnerException is SocketException se && IsConnectionFailure(se.SocketErrorCode) ||
-                                                                           e.InnerException is TaskCanceledException;
+        private static bool IsConnectionTimeout(HttpRequestException e, CancellationToken cancellationToken)
+            => e.InnerException is SocketException se && IsConnectionFailure(se.SocketErrorCode) ||
+               e.InnerException is TaskCanceledException && !cancellationToken.IsCancellationRequested;
 
         private async Task<Response> GetResponseWithUnknownContentLength(RequestState state, CancellationToken cancellationToken)
         {
