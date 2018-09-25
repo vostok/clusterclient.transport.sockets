@@ -13,7 +13,7 @@ notests *default:
     - vostok.clusterclient.core@develop
     - vostok.devtools
     - vostok.commons.collections
-    - vostok.commons.helpers
+    - vostok.commons.time
 
 full-build > notests:
   deps:
