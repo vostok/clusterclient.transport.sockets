@@ -49,32 +49,6 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
         }
 
         [Test]
-        public void Should_include_auxiliary_client_identity_header()
-        {
-            using (var server = TestServer.StartNew(ctx => ctx.Response.StatusCode = 200))
-            {
-                var request = Request.Get(server.Url);
-
-                Send(request);
-
-                server.LastRequest.Headers[HeaderNames.ClientApplication].Should().NotBeNull();
-            }
-        }
-
-        [Test]
-        public void Should_include_auxiliary_request_timeout_header()
-        {
-            using (var server = TestServer.StartNew(ctx => ctx.Response.StatusCode = 200))
-            {
-                var request = Request.Get(server.Url);
-
-                Send(request);
-
-                server.LastRequest.Headers[HeaderNames.RequestTimeout].Should().NotBeNull();
-            }
-        }
-
-        [Test]
         public void Should_not_override_user_provided_auxiliary_client_identity_header()
         {
             using (var server = TestServer.StartNew(ctx => ctx.Response.StatusCode = 200))
@@ -84,19 +58,6 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
                 Send(request);
 
                 server.LastRequest.Headers[HeaderNames.ClientApplication].Should().Be("123");
-            }
-        }
-
-        [Test]
-        public void Should_override_user_provided_auxiliary_request_timeout_header()
-        {
-            using (var server = TestServer.StartNew(ctx => ctx.Response.StatusCode = 200))
-            {
-                var request = Request.Get(server.Url).WithHeader(HeaderNames.RequestTimeout, "123");
-
-                Send(request);
-
-                server.LastRequest.Headers[HeaderNames.RequestTimeout].Should().NotBe("123");
             }
         }
 
