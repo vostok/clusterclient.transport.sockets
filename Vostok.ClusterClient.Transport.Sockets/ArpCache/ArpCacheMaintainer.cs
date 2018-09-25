@@ -4,9 +4,8 @@ using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Vostok.Commons.Helpers.Extensions;
 
-namespace Vostok.ClusterClient.Transport.Webrequest.ArpCache
+namespace Vostok.ClusterClient.Transport.Sockets.ArpCache
 {
     internal static unsafe class ArpCacheMaintainer
     {

@@ -8,9 +8,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Vostok.ClusterClient.Core.Model;
 using Vostok.ClusterClient.Core.Transport;
-using Vostok.ClusterClient.Transport.Webrequest.ArpCache;
+using Vostok.ClusterClient.Transport.Sockets.ArpCache;
 using Vostok.ClusterClient.Transport.Webrequest.Pool;
-using Vostok.Commons.Helpers.Extensions;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.ClusterClient.Transport.Sockets
