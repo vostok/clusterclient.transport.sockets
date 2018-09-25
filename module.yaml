@@ -6,7 +6,7 @@ notests *default:
       name: dotnet
 
   install:
-    - Vostok.ClusterClient.Transport.Sockets/bin/Release/netstandard2.0/Vostok.ClusterClient.Transport.Sockets.dll
+    - Vostok.ClusterClient.Transport.Sockets/bin/Release/netcoreapp2.1/Vostok.ClusterClient.Transport.Sockets.dll
 
   deps:
     - vostok.logging.abstractions
