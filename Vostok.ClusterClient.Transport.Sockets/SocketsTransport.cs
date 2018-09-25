@@ -130,8 +130,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 if (cancellationTokenSource.IsCancellationRequested)
                     return Responses.Canceled;
                 
-                var attemptTimeout = timeout - sw.Elapsed;
-                if (attemptTimeout.TotalMilliseconds < 1)
+                if ((timeout - sw.Elapsed).TotalMilliseconds < 1)
                 {
                     LogRequestTimeout(request, timeout);
                     return new Response(ResponseCode.RequestTimeout);
@@ -141,7 +140,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 {
                     try
                     {
-                        var response = await SendOnceAsync(request, attempt, attemptTimeout, cancellationTokenSource.Token).ConfigureAwait(false);
+                        var response = await SendOnceAsync(request, attempt, cancellationTokenSource.Token).ConfigureAwait(false);
                         if (response != null)
                             return response;
                     }
@@ -165,12 +164,12 @@ namespace Vostok.ClusterClient.Transport.Sockets
             return new Response(ResponseCode.ConnectFailure);
         }
 
-        private async Task<Response> SendOnceAsync(Request request, int attempt, TimeSpan timeout, CancellationToken cancellationToken)
+        private async Task<Response> SendOnceAsync(Request request, int attempt, CancellationToken cancellationToken)
         {
             using (var state = new RequestState(request))
             {
                 // should create new HttpRequestMessage per attempt
-                state.RequestMessage = requestFactory.Create(request, timeout, cancellationToken, out var sendContext);
+                state.RequestMessage = requestFactory.Create(request, cancellationToken, out var sendContext);
 
                 try
                 {

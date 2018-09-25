@@ -20,7 +20,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
             this.log = log;
         }
 
-        public HttpRequestMessage Create(Request request, TimeSpan timeout, CancellationToken cancellationToken, out SendContext sendContext)
+        public HttpRequestMessage Create(Request request, CancellationToken cancellationToken, out SendContext sendContext)
         {
             sendContext = new SendContext();
             
@@ -32,7 +32,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 Content = content
             };
 
-            HeadersConverter.Fill(request, message, timeout, log);
+            HeadersConverter.Fill(request, message, log);
 
             return message;
         }

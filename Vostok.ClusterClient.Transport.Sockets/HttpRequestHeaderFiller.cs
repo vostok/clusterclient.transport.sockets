@@ -1,18 +1,14 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text;
 using Vostok.ClusterClient.Core.Model;
-using Vostok.ClusterClient.Transport.Sockets.Utilities;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.ClusterClient.Transport.Sockets
 {
     internal static class HeadersConverter
     {
-        public static void Fill(Request request, HttpRequestMessage message, TimeSpan timeout, ILog log)
+        public static void Fill(Request request, HttpRequestMessage message, ILog log)
         {
             try
             {
@@ -34,10 +30,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 log.ForContext(typeof(HeadersConverter)).Error(e);
             }
 
-            SetRequestTimeoutHeader(message.Headers, timeout);
-
             TrySetHostExplicitly(request.Headers, message.Headers);
-            TrySetClientIdentityHeader(message.Headers);
         }
 
         public static Headers Create(HttpResponseMessage responseMessage)
@@ -81,17 +74,6 @@ namespace Vostok.ClusterClient.Transport.Sockets
 
                 message.Headers.Add(header.Name, header.Value);
             }
-        }
-        
-        private static void SetRequestTimeoutHeader(HttpHeaders headers, TimeSpan timeout)
-        {
-            headers.Add(HeaderNames.RequestTimeout, timeout.Ticks.ToString());
-        }
-
-        private static void TrySetClientIdentityHeader(HttpHeaders headers)
-        {
-            if (!headers.Contains(HeaderNames.ClientApplication))
-                headers.Add(HeaderNames.ClientApplication, ClientIdentityCore.Get());
         }
 
         private static void TrySetHostExplicitly(Headers source, HttpRequestHeaders target)
