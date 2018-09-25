@@ -3,6 +3,7 @@ using System.ComponentModel.Design;
 using System.Net.Http;
 using System.Threading;
 using Vostok.ClusterClient.Core.Model;
+using Vostok.ClusterClient.Transport.Sockets.Contents;
 using Vostok.ClusterClient.Transport.Webrequest.Pool;
 using Vostok.Commons.Collections;
 using Vostok.Logging.Abstractions;
@@ -43,10 +44,11 @@ namespace Vostok.ClusterClient.Transport.Sockets
             var streamContent = request.StreamContent;
 
             if (content != null)
-                return new RequestByteArrayContent(request, sendContext, log, cancellationToken);
+                return new RequestByteArrayContent(request, sendContext, pool, log, cancellationToken);
             if (streamContent != null)
                 return new RequestStreamContent(request, sendContext, pool, log, cancellationToken);
 
+            // (epeshk): return empty 'content' which extract Socket instance from write stream
             return new RequestEmptyContent(sendContext, log);
         }
 

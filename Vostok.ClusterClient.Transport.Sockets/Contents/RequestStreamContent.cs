@@ -7,7 +7,7 @@ using Vostok.ClusterClient.Core.Model;
 using Vostok.ClusterClient.Transport.Webrequest.Pool;
 using Vostok.Logging.Abstractions;
 
-namespace Vostok.ClusterClient.Transport.Sockets
+namespace Vostok.ClusterClient.Transport.Sockets.Contents
 {
     internal class RequestStreamContent : ClusterClientHttpContent
     {

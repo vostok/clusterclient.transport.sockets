@@ -17,10 +17,6 @@ namespace Vostok.ClusterClient.Transport.Sockets
 {
     public class SocketsTransport : ITransport, IDisposable
     {
-        private const int BufferSize = 16*1024;
-        private const int PreferredReadSize = 16*1024;
-        private const int LOHObjectSizeThreshold = 85*1000;
-        
         private readonly SocketsTransportSettings settings;
         private readonly ILog log;
         private readonly IPool<byte[]> pool;
@@ -42,7 +38,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
             
             this.settings = settings;
             this.log = log;
-            this.pool = new Pool<byte[]>(() => new byte[BufferSize]);
+            this.pool = new Pool<byte[]>(() => new byte[SocketsTransportConstants.PooledBufferSize]);
             var handler = new SocketsHttpHandler
             {
                 Proxy = settings.Proxy,
@@ -284,11 +280,11 @@ namespace Vostok.ClusterClient.Transport.Sockets
                     // -> System.Net.Sockets.Socket+CachedEventArgs
                     // -> System.Net.Sockets.Socket+AwaitableSocketAsyncEventArgs
                     // -> System.Byte[]
-                    if (contentLength < LOHObjectSizeThreshold)
+                    if (contentLength < SocketsTransportConstants.LOHObjectSizeThreshold)
                     {
                         while (totalBytesRead < contentLength)
                         {
-                            var bytesToRead = Math.Min(contentLength - totalBytesRead, PreferredReadSize);
+                            var bytesToRead = Math.Min(contentLength - totalBytesRead, SocketsTransportConstants.PreferredReadSize);
                             var bytesRead = await stream.ReadAsync(array, totalBytesRead, bytesToRead, cancellationToken).ConfigureAwait(false);
                             if (bytesRead == 0)
                                 break;
