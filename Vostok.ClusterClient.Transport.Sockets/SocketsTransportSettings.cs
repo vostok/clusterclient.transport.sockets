@@ -7,18 +7,39 @@ namespace Vostok.ClusterClient.Transport.Sockets
 {
     public class SocketsTransportSettings
     {
+        /// <summary>
+        /// An attempts count to establish TCP connection with target host.
+        /// </summary>
         public int ConnectionAttempts { get; set; } = 2;
 
+        /// <summary>
+        /// A timeout for TCP connection attempt
+        /// </summary>
         public TimeSpan? ConnectionTimeout { get; set; } = TimeSpan.FromMilliseconds(750);
 
+        /// <summary>
+        /// How much time connection will be alive after last usage. Note that if none other connections to endpoint is active, ConnectionIdleTimeout will be divided by 4.
+        /// </summary>
         public TimeSpan ConnectionIdleTimeout { get; set; } = TimeSpan.FromMinutes(2);
 
+        /// <summary>
+        /// How much time client should wait for internal handler return after request cancellation.
+        /// </summary>
         public TimeSpan RequestAbortTimeout { get; set; } = TimeSpan.FromMilliseconds(250);
 
+        /// <summary>
+        /// A <see cref="IWebProxy"/> instance which will be used to send requests.
+        /// </summary>
         public IWebProxy Proxy { get; set; } = null;
 
+        /// <summary>
+        /// Max connections count to single endpoint. When this limit is reached, request falls into queue and wait for free connection.
+        /// </summary>
         public int MaxConnectionsPerEndpoint { get; set; } = 10 * 1000;
 
+        /// <summary>
+        /// Max response body size in bytes. This parameter doesn't affect on content streaming.
+        /// </summary>
         public long? MaxResponseBodySize { get; set; } = null;
         
         public int? MaxResponseDrainSize { get; set; } = null;
