@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Vostok.ClusterClient.Core.Model;
@@ -49,7 +50,12 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 PooledConnectionLifetime = settings.ConnectionLifetime,
                 MaxConnectionsPerServer = settings.MaxConnectionsPerEndpoint,
                 AutomaticDecompression = DecompressionMethods.None,
-                UseCookies = false
+                UseCookies = false,
+                SslOptions =
+                {
+                    CertificateRevocationCheckMode = X509RevocationMode.NoCheck,
+                    RemoteCertificateValidationCallback = (_, __, ___, ____) => true
+                }
             };
 
             if (settings.MaxResponseDrainSize.HasValue)
