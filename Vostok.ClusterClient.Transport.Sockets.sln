@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vostok.ClusterClient.Transp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vostok.ClusterClient.Transport.Sockets.Tests", "Vostok.ClusterClient.Transport.Sockets.Tests\Vostok.ClusterClient.Transport.Sockets.Tests.csproj", "{87C54CC1-C3B8-4730-B55D-5DB6F9C3ABA3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vostok.ClusterClient.Transport.Tests.Shared", "..\vostok.clusterclient.transport.tests\Vostok.ClusterClient.Transport.Tests\Vostok.ClusterClient.Transport.Tests.Shared.csproj", "{2780FF61-6A2A-46D6-B1A7-FFEE5945E130}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vostok.ClusterClient.Transport.Tests.Shared", "..\vostok.clusterclient.transport.tests\Vostok.ClusterClient.Transport.Tests.Shared\Vostok.ClusterClient.Transport.Tests.Shared.csproj", "{2780FF61-6A2A-46D6-B1A7-FFEE5945E130}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
