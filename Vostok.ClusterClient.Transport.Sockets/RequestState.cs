@@ -20,7 +20,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
         public Headers Headers { get; set; }
 
         public ResponseCode ResponseCode { get; set; }
-        public Request Request { get; set; }
+        public Request Request { get; }
 
         public void PreventNextDispose()
         {

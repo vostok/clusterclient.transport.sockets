@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -17,12 +18,16 @@ using Vostok.Logging.Abstractions;
 
 namespace Vostok.ClusterClient.Transport.Sockets
 {
+    /// <summary>
+    /// <para>ClusterClient HTTP transport for .NET Core 2.1 and later.</para>
+    /// <para>Internally uses <see cref="SocketsHttpHandler"/>.</para>
+    /// </summary>
     public class SocketsTransport : ITransport, IDisposable
     {
         private readonly SocketsTransportSettings settings;
         private readonly ILog log;
         private readonly IPool<byte[]> pool;
-        private readonly HttpClient client;
+        private readonly ConcurrentDictionary<TimeSpan, Lazy<HttpClient>> clients;
         private readonly HttpRequestMessageFactory requestFactory;
         private readonly byte[] keepAliveValues;
 
@@ -41,10 +46,20 @@ namespace Vostok.ClusterClient.Transport.Sockets
             this.settings = settings;
             this.log = log;
             this.pool = new Pool<byte[]>(() => new byte[SocketsTransportConstants.PooledBufferSize]);
+            
+            requestFactory = new HttpRequestMessageFactory(pool, log);
+
+            keepAliveValues = KeepAliveTuner.GetKeepAliveValues(settings);
+            
+            clients = new ConcurrentDictionary<TimeSpan, Lazy<HttpClient>>();
+        }
+
+        private HttpClient CreateClient(TimeSpan connectionTimeout)
+        {
             var handler = new SocketsHttpHandler
             {
                 Proxy = settings.Proxy,
-                ConnectTimeout = settings.ConnectionTimeout ?? TimeSpan.FromMinutes(2),
+                ConnectTimeout = connectionTimeout,
                 UseProxy = settings.Proxy != null,
                 AllowAutoRedirect = settings.AllowAutoRedirect,
                 PooledConnectionIdleTimeout = settings.ConnectionIdleTimeout,
@@ -56,19 +71,15 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 {
                     CertificateRevocationCheckMode = X509RevocationMode.NoCheck,
                     RemoteCertificateValidationCallback = (_, __, ___, ____) => true
-                }
+                }    
             };
-
+            
             if (settings.MaxResponseDrainSize.HasValue)
                 handler.MaxResponseDrainSize = settings.MaxResponseDrainSize.Value;
             
             settings.Tune?.Invoke(handler);
             
-            client = new HttpClient(handler, true);
-
-            requestFactory = new HttpRequestMessageFactory(pool, log);
-
-            keepAliveValues = KeepAliveTuner.GetKeepAliveValues(settings);
+            return new HttpClient(handler, true);
         }
 
         /// <inheritdoc />
@@ -87,7 +98,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
             using (var requestCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
             {
                 var timeoutTask = Task.Delay(timeout, timeoutCancellation.Token);
-                var senderTask = SendInternalAsync(request, timeout, requestCancellation);
+                var senderTask = SendInternalAsync(request, connectionTimeout ?? Timeout.InfiniteTimeSpan, requestCancellation.Token);
                 var completedTask = await Task.WhenAny(timeoutTask, senderTask).ConfigureAwait(false);
                 if (completedTask is Task<Response> taskWithResponse)
                 {
@@ -123,120 +134,86 @@ namespace Vostok.ClusterClient.Transport.Sockets
             }
         }
 
-        private async Task<Response> SendInternalAsync(Request request, TimeSpan timeout, CancellationTokenSource cancellationTokenSource)
+        private async Task<Response> SendInternalAsync(Request request, TimeSpan connectionTimeout, CancellationToken cancellationToken)
         {
-            var sw = Stopwatch.StartNew();
-            
-            for (var attempt = 1; attempt <= settings.ConnectionAttempts; attempt++)
+            try
             {
-                if (cancellationTokenSource.IsCancellationRequested)
-                    return Responses.Canceled;
-                
-                if ((timeout - sw.Elapsed).TotalMilliseconds < 1)
-                {
-                    LogRequestTimeout(request, timeout);
-                    return new Response(ResponseCode.RequestTimeout);
-                }
-
-                try
-                {
-                    try
-                    {
-                        var response = await SendOnceAsync(request, attempt, cancellationTokenSource.Token).ConfigureAwait(false);
-                        if (response != null)
-                            return response;
-                    }
-                    catch (Exception)
-                    {
-                        cancellationTokenSource.Cancel();
-                        throw;
-                    }
-                }
-                catch (StreamAlreadyUsedException)
-                {
-                    throw;
-                }
-                catch (Exception e)
-                {
-                    LogUnknownException(e);
-                    return Responses.UnknownFailure;
-                }
+                using (var state = new RequestState(request))
+                    return await SendOnceAsync(state, request, connectionTimeout, cancellationToken).ConfigureAwait(false);
             }
-
-            return new Response(ResponseCode.ConnectFailure);
+            catch (StreamAlreadyUsedException)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                LogUnknownException(e);
+                return Responses.UnknownFailure;
+            }
         }
 
-        private async Task<Response> SendOnceAsync(Request request, int attempt, CancellationToken cancellationToken)
+        private async Task<Response> SendOnceAsync(RequestState state, Request request, TimeSpan connectionTimeout, CancellationToken cancellationToken)
         {
-            using (var state = new RequestState(request))
+            state.RequestMessage = requestFactory.Create(request, cancellationToken, out var sendContext);
+
+            var client = clients.GetOrAdd(connectionTimeout, t => new Lazy<HttpClient>(() => CreateClient(t))).Value;
+            
+            try
             {
-                // should create new HttpRequestMessage per attempt
-                state.RequestMessage = requestFactory.Create(request, cancellationToken, out var sendContext);
+                state.ResponseMessage = await client
+                    .SendAsync(state.RequestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (HttpRequestException e) when (IsConnectionTimeout(e, cancellationToken))
+            {
+                var message = $"Connection failure. Target = {request.Url.Authority}.";
+                log.Warn(e, message);
+                return Responses.ConnectFailure;
+            }
+            catch (OperationCanceledException)
+            {
+                return Responses.Canceled;
+            }
+            
+            var socket = sendContext.Socket;
+            if (socket != null)
+            {
+                if (sendContext.Response != null)
+                    return sendContext.Response;
 
-                try
+                if (settings.TcpKeepAliveEnabled)
+                    KeepAliveTuner.Tune(socket, settings, keepAliveValues);
+                
+                if (settings.ArpCacheWarmupEnabled && socket.RemoteEndPoint is IPEndPoint ipEndPoint)
+                    ArpCacheMaintainer.ReportAddress(ipEndPoint.Address);
+            }
+
+            state.ResponseCode = (ResponseCode) (int) state.ResponseMessage.StatusCode;
+
+            state.Headers = HeadersConverter.Create(state.ResponseMessage);
+
+            var contentLength = state.ResponseMessage.Content.Headers.ContentLength;
+
+            try
+            {
+                if (NeedToStreamResponseBody(contentLength))
                 {
-                    var task = client
-                        .SendAsync(state.RequestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
-                        .ConfigureAwait(false);
-                    
-                    state.ResponseMessage = await task; // client
-                        // .SendAsync(state.RequestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
-                        // .ConfigureAwait(false);
+                    return await GetResponseWithStreamAsync(state).ConfigureAwait(false);
                 }
-                catch (HttpRequestException e) when (IsConnectionTimeout(e, cancellationToken))
+
+                if (contentLength != null)
                 {
-                    var message = $"Connection failure. Target = {request.Url.Authority}. Attempt = {attempt}/{settings.ConnectionAttempts}.";
-                    if (attempt == settings.ConnectionAttempts)
-                        log.Error(e, message);
-                    else
-                        log.Warn(e, message);
-                    return null;
-                }
-                catch (OperationCanceledException)
-                {
-                    return Responses.Canceled;
-                }
-                var socket = sendContext.Socket;
-                if (socket != null)
-                {
+                    if (contentLength > settings.MaxResponseBodySize)
+                        return new Response(ResponseCode.InsufficientStorage, headers: state.Headers);
 
-                    if (sendContext.Response != null)
-                        return sendContext.Response;
-
-                    if (settings.TcpKeepAliveEnabled)
-                        KeepAliveTuner.Tune(socket, settings, keepAliveValues);
-                    
-                    if (settings.ArpCacheWarmupEnabled && socket.RemoteEndPoint is IPEndPoint ipEndPoint)
-                        ArpCacheMaintainer.ReportAddress(ipEndPoint.Address);
+                    return await GetResponseWithKnownContentLength(state, (int) contentLength, cancellationToken).ConfigureAwait(false);
                 }
 
-                state.ResponseCode = (ResponseCode) (int) state.ResponseMessage.StatusCode;
-
-                state.Headers = HeadersConverter.Create(state.ResponseMessage);
-
-                var contentLength = state.ResponseMessage.Content.Headers.ContentLength;
-
-                try
-                {
-                    if (NeedToStreamResponseBody(contentLength))
-                    {
-                        return await GetResponseWithStreamAsync(state).ConfigureAwait(false);
-                    }
-
-                    if (contentLength != null)
-                    {
-                        if (contentLength > settings.MaxResponseBodySize)
-                            return new Response(ResponseCode.InsufficientStorage, headers: state.Headers);
-
-                        return await GetResponseWithKnownContentLength(state, (int) contentLength, cancellationToken).ConfigureAwait(false);
-                    }
-
-                    return await GetResponseWithUnknownContentLength(state, cancellationToken).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    return Responses.Canceled;
-                }
+                return await GetResponseWithUnknownContentLength(state, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                return Responses.Canceled;
             }
         }
 
@@ -399,7 +376,13 @@ namespace Vostok.ClusterClient.Transport.Sockets
         /// <inheritdoc />
         public void Dispose()
         {
-            client?.Dispose();
+            foreach (var kvp in clients)
+            {
+                var client = kvp.Value.Value;
+                
+                client.CancelPendingRequests();
+                client.Dispose();
+            }
         }
     }
 }

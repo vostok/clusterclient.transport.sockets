@@ -12,11 +12,6 @@ namespace Vostok.ClusterClient.Transport.Sockets
         public int ConnectionAttempts { get; set; } = 2;
 
         /// <summary>
-        /// A timeout for TCP connection attempt
-        /// </summary>
-        public TimeSpan? ConnectionTimeout { get; set; } = TimeSpan.FromMilliseconds(750);
-
-        /// <summary>
         /// How much time connection will be alive after last usage. Note that if none other connections to endpoint is active, ConnectionIdleTimeout will be divided by 4.
         /// </summary>
         public TimeSpan ConnectionIdleTimeout { get; set; } = TimeSpan.FromMinutes(2);
@@ -76,7 +71,6 @@ namespace Vostok.ClusterClient.Transport.Sockets
                 BufferFactory = BufferFactory,
                 Proxy = Proxy,
                 ConnectionAttempts = ConnectionAttempts,
-                ConnectionTimeout = ConnectionTimeout,
                 Tune = Tune,
                 AllowAutoRedirect = AllowAutoRedirect,
                 ConnectionIdleTimeout = ConnectionIdleTimeout,
