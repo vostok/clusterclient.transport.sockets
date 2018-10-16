@@ -1,10 +1,11 @@
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using Vostok.ClusterClient.Core.Model;
+using Vostok.Clusterclient.Core.Model;
+using Vostok.ClusterClient.Transport.Sockets;
 using Vostok.Logging.Abstractions;
 
-namespace Vostok.ClusterClient.Transport.Sockets
+namespace Vostok.Clusterclient.Transport.Sockets
 {
     internal static class HeadersConverter
     {

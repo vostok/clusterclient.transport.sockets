@@ -7,8 +7,9 @@ using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
-using Vostok.ClusterClient.Core.Model;
-using Vostok.ClusterClient.Core.Transport;
+using Vostok.Clusterclient.Core.Model;
+using Vostok.Clusterclient.Core.Transport;
+using Vostok.Clusterclient.Transport.Sockets;
 using Vostok.ClusterClient.Transport.Sockets.ArpCache;
 using Vostok.ClusterClient.Transport.Webrequest.Pool;
 using Vostok.Commons.Time;
@@ -71,7 +72,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
         }
 
         /// <inheritdoc />
-        public async Task<Response> SendAsync(Request request, TimeSpan timeout, CancellationToken cancellationToken)
+        public async Task<Response> SendAsync(Request request, TimeSpan? connectionTimeout, TimeSpan timeout, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
                 return Responses.Canceled;
@@ -174,9 +175,13 @@ namespace Vostok.ClusterClient.Transport.Sockets
 
                 try
                 {
-                    state.ResponseMessage = await client
+                    var task = client
                         .SendAsync(state.RequestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                         .ConfigureAwait(false);
+                    
+                    state.ResponseMessage = await task; // client
+                        // .SendAsync(state.RequestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+                        // .ConfigureAwait(false);
                 }
                 catch (HttpRequestException e) when (IsConnectionTimeout(e, cancellationToken))
                 {

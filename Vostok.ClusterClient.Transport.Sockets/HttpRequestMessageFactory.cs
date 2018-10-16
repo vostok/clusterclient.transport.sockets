@@ -1,11 +1,9 @@
-using System;
-using System.ComponentModel.Design;
 using System.Net.Http;
 using System.Threading;
-using Vostok.ClusterClient.Core.Model;
+using Vostok.Clusterclient.Core.Model;
+using Vostok.Clusterclient.Transport.Sockets;
 using Vostok.ClusterClient.Transport.Sockets.Contents;
 using Vostok.ClusterClient.Transport.Webrequest.Pool;
-using Vostok.Commons.Collections;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.ClusterClient.Transport.Sockets

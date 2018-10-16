@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions.Extensions;
 using NUnit.Framework;
-using Vostok.ClusterClient.Core.Model;
+using Vostok.Clusterclient.Core.Model;
 using Vostok.ClusterClient.Transport.Sockets.Tests.Utilities;
 using Vostok.Logging.Abstractions;
 using Vostok.Logging.Console;
@@ -30,12 +30,12 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
 
         protected Task<Response> SendAsync(Request request, TimeSpan? timeout = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return transport.SendAsync(request, timeout ?? 1.Minutes(), cancellationToken);
+            return transport.SendAsync(request, null, timeout ?? 1.Minutes(), cancellationToken);
         }
 
         protected Response Send(Request request, TimeSpan? timeout = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return transport.SendAsync(request, timeout ?? 1.Minutes(), cancellationToken).GetAwaiter().GetResult();
+            return transport.SendAsync(request, null, timeout ?? 1.Minutes(), cancellationToken).GetAwaiter().GetResult();
         }
 
         protected void SetSettings(Action<SocketsTransportSettings> update)

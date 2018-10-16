@@ -1,6 +1,5 @@
-using System;
-using Vostok.ClusterClient.Core.Transport;
-using Vostok.ClusterClient.Transport.Tests.Functional;
+using Vostok.Clusterclient.Core.Transport;
+using Vostok.Clusterclient.Transport.Tests.Shared.Functional;
 using Vostok.Logging.Abstractions;
 using Vostok.Logging.Console;
 
@@ -17,8 +16,6 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
                 UseResponseStreaming = settings.UseResponseStreaming,
                 Proxy = settings.Proxy,
                 BufferFactory = settings.BufferFactory,
-                ConnectionAttempts = settings.ConnectionAttempts,
-                ConnectionTimeout = settings.ConnectionTimeout,
                 AllowAutoRedirect = settings.AllowAutoRedirect,
                 MaxResponseBodySize = settings.MaxResponseBodySize,
                 MaxConnectionsPerEndpoint = settings.MaxConnectionsPerEndpoint
@@ -29,8 +26,6 @@ namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
         public TestTransportSettings CreateDefaultSettings() => new TestTransportSettings
         {
             MaxConnectionsPerEndpoint = 10 * 1000,
-            ConnectionAttempts = 2,
-            ConnectionTimeout = TimeSpan.FromMilliseconds(750),
             BufferFactory = size => new byte[size],
             UseResponseStreaming = _ => false
         };
