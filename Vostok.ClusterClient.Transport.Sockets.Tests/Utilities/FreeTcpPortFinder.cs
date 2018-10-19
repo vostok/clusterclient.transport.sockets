@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace Vostok.ClusterClient.Transport.Sockets.Tests.Utilities
+namespace Vostok.Clusterclient.Transport.Sockets.Tests.Utilities
 {
     internal static class FreeTcpPortFinder
     {

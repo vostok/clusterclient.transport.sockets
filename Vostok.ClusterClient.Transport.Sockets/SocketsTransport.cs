@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -10,13 +9,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Core.Transport;
-using Vostok.Clusterclient.Transport.Sockets;
-using Vostok.ClusterClient.Transport.Sockets.ArpCache;
-using Vostok.ClusterClient.Transport.Webrequest.Pool;
+using Vostok.Clusterclient.Transport.Sockets.ArpCache;
+using Vostok.Clusterclient.Transport.Sockets.Pool;
 using Vostok.Commons.Time;
 using Vostok.Logging.Abstractions;
 
-namespace Vostok.ClusterClient.Transport.Sockets
+namespace Vostok.Clusterclient.Transport.Sockets
 {
     /// <summary>
     /// <para>ClusterClient HTTP transport for .NET Core 2.1 and later.</para>
@@ -164,7 +162,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
                     .SendAsync(state.RequestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                     .ConfigureAwait(false);
             }
-            catch (HttpRequestException e) when (IsConnectionTimeout(e, cancellationToken))
+            catch (HttpRequestException e) when (IsConnectionFailure(e, cancellationToken))
             {
                 var message = $"Connection failure. Target = {request.Url.Authority}.";
                 log.Warn(e, message);
@@ -217,7 +215,7 @@ namespace Vostok.ClusterClient.Transport.Sockets
             }
         }
 
-        private static bool IsConnectionTimeout(HttpRequestException e, CancellationToken cancellationToken)
+        private static bool IsConnectionFailure(HttpRequestException e, CancellationToken cancellationToken)
             => e.InnerException is SocketException se && IsConnectionFailure(se.SocketErrorCode) ||
                e.InnerException is TaskCanceledException && !cancellationToken.IsCancellationRequested;
 

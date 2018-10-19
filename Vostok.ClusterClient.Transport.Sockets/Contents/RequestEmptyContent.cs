@@ -3,7 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Vostok.Logging.Abstractions;
 
-namespace Vostok.ClusterClient.Transport.Sockets.Contents
+namespace Vostok.Clusterclient.Transport.Sockets.Contents
 {
     internal class RequestEmptyContent : ClusterClientHttpContent
     {

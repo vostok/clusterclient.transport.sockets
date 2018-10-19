@@ -4,11 +4,11 @@ using System.Threading.Tasks;
 using FluentAssertions.Extensions;
 using NUnit.Framework;
 using Vostok.Clusterclient.Core.Model;
-using Vostok.ClusterClient.Transport.Sockets.Tests.Utilities;
+using Vostok.Clusterclient.Transport.Sockets.Tests.Utilities;
 using Vostok.Logging.Abstractions;
 using Vostok.Logging.Console;
 
-namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
+namespace Vostok.Clusterclient.Transport.Sockets.Tests.Functional
 {
     [TestFixture]
     internal class TransportTestsBase

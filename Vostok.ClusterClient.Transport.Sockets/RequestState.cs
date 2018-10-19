@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Threading;
 using Vostok.Clusterclient.Core.Model;
 
-namespace Vostok.ClusterClient.Transport.Sockets
+namespace Vostok.Clusterclient.Transport.Sockets
 {
     internal class RequestState : IDisposable
     {

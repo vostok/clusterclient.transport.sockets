@@ -4,7 +4,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Vostok.Logging.Abstractions;
 
-namespace Vostok.ClusterClient.Transport.Sockets.Contents
+namespace Vostok.Clusterclient.Transport.Sockets.Contents
 {
     internal abstract class ClusterClientHttpContent : HttpContent
     {

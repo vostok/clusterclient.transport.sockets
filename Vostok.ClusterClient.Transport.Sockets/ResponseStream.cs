@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Vostok.ClusterClient.Transport.Sockets
+namespace Vostok.Clusterclient.Transport.Sockets
 {
     internal class ResponseStream : Stream
     {

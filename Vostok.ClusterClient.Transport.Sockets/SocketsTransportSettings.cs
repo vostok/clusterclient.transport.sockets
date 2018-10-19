@@ -2,7 +2,7 @@ using System;
 using System.Net;
 using System.Net.Http;
 
-namespace Vostok.ClusterClient.Transport.Sockets
+namespace Vostok.Clusterclient.Transport.Sockets
 {
     public class SocketsTransportSettings
     {

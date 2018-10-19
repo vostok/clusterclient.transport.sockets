@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using Vostok.Logging.Abstractions;
 
-namespace Vostok.ClusterClient.Transport.Sockets
+namespace Vostok.Clusterclient.Transport.Sockets
 {
     internal static class HttpHeadersUnlocker
     {

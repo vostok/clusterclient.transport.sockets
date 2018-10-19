@@ -3,7 +3,7 @@ using Vostok.Clusterclient.Transport.Tests.Shared.Functional;
 using Vostok.Logging.Abstractions;
 using Vostok.Logging.Console;
 
-namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
+namespace Vostok.Clusterclient.Transport.Sockets.Tests.Functional
 {
     public class Config : ITransportTestConfig
     {

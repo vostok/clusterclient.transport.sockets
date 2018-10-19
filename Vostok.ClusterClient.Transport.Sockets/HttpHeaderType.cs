@@ -1,6 +1,6 @@
 using System;
 
-namespace Vostok.ClusterClient.Transport.Sockets
+namespace Vostok.Clusterclient.Transport.Sockets
 {
     // copy-paste of System.Net.Http.Headers.HttpHeaderType
     [Flags]

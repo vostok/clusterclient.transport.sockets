@@ -6,7 +6,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using Vostok.Logging.Abstractions;
 
-namespace Vostok.ClusterClient.Transport.Sockets
+namespace Vostok.Clusterclient.Transport.Sockets
 {
     internal static class SocketAccessor
     {

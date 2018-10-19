@@ -2,7 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace Vostok.ClusterClient.Transport.Sockets.ArpCache
+namespace Vostok.Clusterclient.Transport.Sockets.ArpCache
 {
     internal class IPv4Network
     {

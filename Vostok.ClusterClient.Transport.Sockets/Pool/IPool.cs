@@ -1,20 +1,8 @@
-﻿using System;
-
-namespace Vostok.ClusterClient.Transport.Webrequest.Pool
+﻿namespace Vostok.Clusterclient.Transport.Sockets.Pool
 {
-    internal interface IPool<T> : IDisposable
+    internal interface IPool<T>
         where T : class
     {
-        /// <summary>
-        /// Returns the total count of resources ever allocated by this pool.
-        /// </summary>
-        int Allocated { get; }
-
-        /// <summary>
-        /// Returns the count of resources currently free for use in this pool.
-        /// </summary>
-        int Available { get; }
-
         /// <summary>
         /// Acquires a resource from pool, allocating a new one if necessary.
         /// </summary>
@@ -24,6 +12,6 @@ namespace Vostok.ClusterClient.Transport.Webrequest.Pool
         /// Releases a previously acquired resource back to pool.
         /// </summary>
         /// <exception cref="System.InvalidOperationException">Attempt to release a resource that wasn't acquired earlier.</exception>
-        void Release(T resource);
+        void Return(T resource);
     }
 }

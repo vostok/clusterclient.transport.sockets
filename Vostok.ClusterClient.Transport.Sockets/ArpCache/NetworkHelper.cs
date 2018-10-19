@@ -6,7 +6,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace Vostok.ClusterClient.Transport.Sockets.ArpCache
+namespace Vostok.Clusterclient.Transport.Sockets.ArpCache
 {
     internal static class NetworkHelper
     {

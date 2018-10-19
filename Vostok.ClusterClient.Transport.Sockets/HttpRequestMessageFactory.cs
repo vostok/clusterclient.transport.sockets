@@ -1,12 +1,11 @@
 using System.Net.Http;
 using System.Threading;
 using Vostok.Clusterclient.Core.Model;
-using Vostok.Clusterclient.Transport.Sockets;
-using Vostok.ClusterClient.Transport.Sockets.Contents;
-using Vostok.ClusterClient.Transport.Webrequest.Pool;
+using Vostok.Clusterclient.Transport.Sockets.Contents;
+using Vostok.Clusterclient.Transport.Sockets.Pool;
 using Vostok.Logging.Abstractions;
 
-namespace Vostok.ClusterClient.Transport.Sockets
+namespace Vostok.Clusterclient.Transport.Sockets
 {
     internal class HttpRequestMessageFactory
     {

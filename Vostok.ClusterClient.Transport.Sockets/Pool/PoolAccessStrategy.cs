@@ -1,4 +1,4 @@
-﻿namespace Vostok.ClusterClient.Transport.Webrequest.Pool
+﻿namespace Vostok.Clusterclient.Transport.Sockets.Pool
 {
     internal enum PoolAccessStrategy
     {

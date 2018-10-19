@@ -4,10 +4,10 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Vostok.Clusterclient.Core.Model;
-using Vostok.ClusterClient.Transport.Webrequest.Pool;
+using Vostok.Clusterclient.Transport.Sockets.Pool;
 using Vostok.Logging.Abstractions;
 
-namespace Vostok.ClusterClient.Transport.Sockets.Contents
+namespace Vostok.Clusterclient.Transport.Sockets.Contents
 {
     internal class RequestStreamContent : ClusterClientHttpContent
     {

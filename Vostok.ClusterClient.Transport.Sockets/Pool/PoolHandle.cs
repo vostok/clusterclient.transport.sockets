@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Vostok.ClusterClient.Transport.Webrequest.Pool
+namespace Vostok.Clusterclient.Transport.Sockets.Pool
 {
     internal struct PoolHandle<T> : IDisposable
         where T : class
@@ -14,6 +14,6 @@ namespace Vostok.ClusterClient.Transport.Webrequest.Pool
             this.resource = resource;
         }
 
-        public void Dispose() => pool.Release(resource);
+        public void Dispose() => pool.Return(resource);
     }
 }

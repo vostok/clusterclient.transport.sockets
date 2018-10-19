@@ -4,10 +4,10 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Vostok.Clusterclient.Core.Model;
-using Vostok.ClusterClient.Transport.Webrequest.Pool;
+using Vostok.Clusterclient.Transport.Sockets.Pool;
 using Vostok.Logging.Abstractions;
 
-namespace Vostok.ClusterClient.Transport.Sockets.Contents
+namespace Vostok.Clusterclient.Transport.Sockets.Contents
 {
     internal class RequestByteArrayContent : ClusterClientHttpContent
     {
@@ -35,13 +35,14 @@ namespace Vostok.ClusterClient.Transport.Sockets.Contents
             
             try
             {
+                // await stream.WriteAsync(new ReadOnlyMemory<byte>(content.Buffer, content.Offset, content.Length), cancellationToken);
                 // (epeshk): avoid storing large buffers in Socket private fields.
                 if (content.Buffer.Length < SocketsTransportConstants.LOHObjectSizeThreshold)
                 {
                     await stream.WriteAsync(content.Buffer, content.Offset, content.Length, cancellationToken).ConfigureAwait(false);
                     return;
                 }
-
+                
                 using (pool.AcquireHandle(out var buffer))
                 {
                     var index = content.Offset;
@@ -61,6 +62,7 @@ namespace Vostok.ClusterClient.Transport.Sockets.Contents
             }
             catch (Exception e)
             {
+                Console.WriteLine(e);
                 LogSendBodyFailure(request.Url, e);
             }
         }

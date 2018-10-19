@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 
-namespace Vostok.ClusterClient.Transport.Webrequest.Pool
+namespace Vostok.Clusterclient.Transport.Sockets.Pool
 {
-
     internal static class IPoolExtensions
     {
         /// <summary>
@@ -14,18 +12,6 @@ namespace Vostok.ClusterClient.Transport.Webrequest.Pool
         {
             resource = pool.Acquire();
             return new PoolHandle<T>(pool, resource);
-        }
-
-        public static void Preallocate<T>(this IPool<T> pool, int count)
-            where T : class
-        {
-            var resources = new List<T>();
-
-            for (var i = 0; i < count; i++)
-                resources.Add(pool.Acquire());
-
-            foreach (var resource in resources)
-                pool.Release(resource);
         }
     }
 }
