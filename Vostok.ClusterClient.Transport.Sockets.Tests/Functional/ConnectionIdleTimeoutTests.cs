@@ -14,6 +14,7 @@ using Microsoft.Diagnostics.Tracing.Parsers;
 using Microsoft.Diagnostics.Tracing.Session;
 using NUnit.Framework;
 using Vostok.Clusterclient.Core.Model;
+using Vostok.Clusterclient.Transport.Sockets.Tests.Functional;
 using Vostok.Clusterclient.Transport.Tests.Shared.Functional.Helpers;
 using Vostok.Commons.Testing;
 
