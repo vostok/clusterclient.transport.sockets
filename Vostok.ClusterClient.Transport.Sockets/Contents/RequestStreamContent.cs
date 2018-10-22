@@ -20,8 +20,8 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
             SendContext sendContext,
             IPool<byte[]> arrayPool,
             ILog log,
-             CancellationToken cancellationToken)
-        : base(sendContext, log)
+            CancellationToken cancellationToken)
+            : base(sendContext, log)
         {
             this.request = request;
             this.arrayPool = arrayPool;

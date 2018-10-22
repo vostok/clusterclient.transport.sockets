@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
@@ -17,8 +16,8 @@ using Vostok.Logging.Abstractions;
 namespace Vostok.Clusterclient.Transport.Sockets
 {
     /// <summary>
-    /// <para>ClusterClient HTTP transport for .NET Core 2.1 and later.</para>
-    /// <para>Internally uses <see cref="SocketsHttpHandler"/>.</para>
+    ///     <para>ClusterClient HTTP transport for .NET Core 2.1 and later.</para>
+    ///     <para>Internally uses <see cref="SocketsHttpHandler" />.</para>
     /// </summary>
     public class SocketsTransport : ITransport, IDisposable
     {
@@ -30,64 +29,36 @@ namespace Vostok.Clusterclient.Transport.Sockets
         private readonly byte[] keepAliveValues;
         private readonly ResponseReader responseReader;
 
-        /// <inheritdoc />
-        public TransportCapabilities Capabilities { get; } = TransportCapabilities.RequestStreaming | TransportCapabilities.ResponseStreaming;
-
         /// <summary>
-        /// Creates ClusterClient transport for .NET Core 2.1 and later based on <see cref="SocketsHttpHandler"/>
+        ///     Creates ClusterClient transport for .NET Core 2.1 and later based on <see cref="SocketsHttpHandler" />
         /// </summary>
         /// <param name="settings"></param>
         /// <param name="log"></param>
         public SocketsTransport(SocketsTransportSettings settings, ILog log)
         {
             settings = settings.Clone();
-            
+
             this.settings = settings;
             this.log = log;
-            this.pool = new Pool<byte[]>(() => new byte[SocketsTransportConstants.PooledBufferSize]);
-            
+            pool = new Pool<byte[]>(() => new byte[SocketsTransportConstants.PooledBufferSize]);
+
             requestFactory = new HttpRequestMessageFactory(pool, log);
             responseReader = new ResponseReader(settings, pool, log);
 
             keepAliveValues = KeepAliveTuner.GetKeepAliveValues(settings);
-            
+
             clients = new ConcurrentDictionary<TimeSpan, Lazy<HttpClient>>();
         }
 
-        private HttpClient CreateClient(TimeSpan connectionTimeout)
-        {
-            var handler = new SocketsHttpHandler
-            {
-                Proxy = settings.Proxy,
-                ConnectTimeout = connectionTimeout,
-                UseProxy = settings.Proxy != null,
-                AllowAutoRedirect = settings.AllowAutoRedirect,
-                PooledConnectionIdleTimeout = settings.ConnectionIdleTimeout,
-                PooledConnectionLifetime = settings.ConnectionLifetime,
-                MaxConnectionsPerServer = settings.MaxConnectionsPerEndpoint,
-                AutomaticDecompression = DecompressionMethods.None,
-                UseCookies = false,
-                SslOptions =
-                {
-                    CertificateRevocationCheckMode = X509RevocationMode.NoCheck,
-                    RemoteCertificateValidationCallback = (_, __, ___, ____) => true
-                }    
-            };
-            
-            if (settings.MaxResponseDrainSize.HasValue)
-                handler.MaxResponseDrainSize = settings.MaxResponseDrainSize.Value;
-            
-            settings.Tune?.Invoke(handler);
-            
-            return new HttpClient(handler, true);
-        }
+        /// <inheritdoc />
+        public TransportCapabilities Capabilities { get; } = TransportCapabilities.RequestStreaming | TransportCapabilities.ResponseStreaming;
 
         /// <inheritdoc />
         public async Task<Response> SendAsync(Request request, TimeSpan? connectionTimeout, TimeSpan timeout, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
                 return Responses.Canceled;
-            
+
             if (timeout.TotalMilliseconds < 1)
             {
                 LogRequestTimeout(request, timeout);
@@ -123,7 +94,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
                     var abortWaitingDelay = Task.Delay(settings.RequestAbortTimeout, abortCancellation.Token);
 
                     await Task.WhenAny(senderTaskContinuation, abortWaitingDelay).ConfigureAwait(false);
-                    
+
                     abortCancellation.Cancel();
                 }
 
@@ -132,6 +103,70 @@ namespace Vostok.Clusterclient.Transport.Sockets
 
                 return Responses.Timeout;
             }
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            foreach (var kvp in clients)
+            {
+                var client = kvp.Value.Value;
+
+                client.CancelPendingRequests();
+                client.Dispose();
+            }
+        }
+
+        private static bool IsConnectionFailure(HttpRequestException e, CancellationToken cancellationToken)
+            => e.InnerException is SocketException se && IsConnectionFailure(se.SocketErrorCode) ||
+               e.InnerException is TaskCanceledException && !cancellationToken.IsCancellationRequested;
+
+        private static bool IsConnectionFailure(SocketError socketError)
+        {
+            switch (socketError)
+            {
+                case SocketError.HostNotFound:
+                case SocketError.AddressNotAvailable:
+                // seen on linux:
+                case SocketError.ConnectionRefused:
+                case SocketError.TryAgain:
+                case SocketError.NetworkUnreachable:
+                // other:
+                case SocketError.NetworkDown:
+                case SocketError.HostDown:
+                case SocketError.HostUnreachable:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private HttpClient CreateClient(TimeSpan connectionTimeout)
+        {
+            var handler = new SocketsHttpHandler
+            {
+                Proxy = settings.Proxy,
+                ConnectTimeout = connectionTimeout,
+                UseProxy = settings.Proxy != null,
+                AllowAutoRedirect = settings.AllowAutoRedirect,
+                PooledConnectionIdleTimeout = settings.ConnectionIdleTimeout,
+                PooledConnectionLifetime = settings.ConnectionLifetime,
+                MaxConnectionsPerServer = settings.MaxConnectionsPerEndpoint,
+                AutomaticDecompression = DecompressionMethods.None,
+                UseCookies = false,
+                SslOptions =
+                {
+                    CertificateRevocationCheckMode = X509RevocationMode.NoCheck,
+                    RemoteCertificateValidationCallback = (_, __, ___, ____) => true
+                }
+            };
+
+            if (settings.MaxResponseDrainSize.HasValue)
+                handler.MaxResponseDrainSize = settings.MaxResponseDrainSize.Value;
+
+            settings.Tune?.Invoke(handler);
+
+            return new HttpClient(handler, true);
         }
 
         private async Task<Response> SendInternalAsync(Request request, TimeSpan connectionTimeout, CancellationToken cancellationToken)
@@ -161,7 +196,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
             state.RequestMessage = requestFactory.Create(request, cancellationToken, out var sendContext);
 
             var client = clients.GetOrAdd(connectionTimeout, t => new Lazy<HttpClient>(() => CreateClient(t))).Value;
-            
+
             try
             {
                 state.ResponseMessage = await client
@@ -174,7 +209,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 log.Warn(e, message);
                 return Responses.ConnectFailure;
             }
-            
+
             var socket = sendContext.Socket;
             if (socket != null)
             {
@@ -183,7 +218,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
 
                 if (settings.TcpKeepAliveEnabled)
                     KeepAliveTuner.Tune(socket, settings, keepAliveValues);
-                
+
                 if (settings.ArpCacheWarmupEnabled && socket.RemoteEndPoint is IPEndPoint ipEndPoint)
                     ArpCacheMaintainer.ReportAddress(ipEndPoint.Address);
             }
@@ -195,22 +230,17 @@ namespace Vostok.Clusterclient.Transport.Sockets
             var responseReadResult = await responseReader
                 .ReadResponseBodyAsync(state.ResponseMessage, cancellationToken)
                 .ConfigureAwait(false);
-            
+
             if (responseReadResult.Content != null)
                 return new Response(responseCode, responseReadResult.Content, headers);
             if (responseReadResult.ErrorCode != null)
                 return new Response(responseReadResult.ErrorCode.Value, null, headers);
             if (responseReadResult.Stream == null)
                 return new Response(responseCode, null, headers);
-            
+
             state.PreventNextDispose();
             return new Response(responseCode, null, headers, new ResponseStream(responseReadResult.Stream, state));
         }
-
-        private static bool IsConnectionFailure(HttpRequestException e, CancellationToken cancellationToken)
-            => e.InnerException is SocketException se && IsConnectionFailure(se.SocketErrorCode) ||
-               e.InnerException is TaskCanceledException && !cancellationToken.IsCancellationRequested;
-
 
         private void LogRequestTimeout(Request request, TimeSpan timeout)
         {
@@ -225,38 +255,6 @@ namespace Vostok.Clusterclient.Transport.Sockets
         private void LogFailedToWaitForRequestAbort()
         {
             log.Warn($"Timed out request was aborted but did not complete in {settings.RequestAbortTimeout.ToPrettyString()}.");
-        }
-
-        private static bool IsConnectionFailure(SocketError socketError)
-        {
-            switch (socketError)
-            {
-                case SocketError.HostNotFound:
-                case SocketError.AddressNotAvailable:
-                // seen on linux:
-                case SocketError.ConnectionRefused:
-                case SocketError.TryAgain:
-                case SocketError.NetworkUnreachable:
-                // other:
-                case SocketError.NetworkDown:
-                case SocketError.HostDown:
-                case SocketError.HostUnreachable:
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            foreach (var kvp in clients)
-            {
-                var client = kvp.Value.Value;
-                
-                client.CancelPendingRequests();
-                client.Dispose();
-            }
         }
     }
 }

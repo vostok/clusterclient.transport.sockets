@@ -20,7 +20,8 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
             SendContext context,
             IPool<byte[]> pool,
             ILog log,
-            CancellationToken cancellationToken) : base(context, log)
+            CancellationToken cancellationToken)
+            : base(context, log)
         {
             this.request = request;
             this.pool = pool;
@@ -32,7 +33,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
         protected override async Task SerializeAsync(Stream stream, TransportContext context)
         {
             var content = request.Content;
-            
+
             try
             {
                 // await stream.WriteAsync(new ReadOnlyMemory<byte>(content.Buffer, content.Offset, content.Length), cancellationToken);
@@ -42,7 +43,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
                     await stream.WriteAsync(content.Buffer, content.Offset, content.Length, cancellationToken).ConfigureAwait(false);
                     return;
                 }
-                
+
                 using (pool.AcquireHandle(out var buffer))
                 {
                     var index = content.Offset;

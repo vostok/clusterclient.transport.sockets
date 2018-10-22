@@ -41,11 +41,12 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 headers = headers.Set(responseHeader.Key, string.Join(", ", responseHeader.Value));
 
             if (responseMessage.Content != null)
+            {
                 foreach (var contentHeader in responseMessage.Content.Headers)
                     headers = headers.Set(contentHeader.Key, string.Join(", ", contentHeader.Value));
+            }
 
             return headers;
-            
         }
 
         private static void AssignHeadersDirectly(Headers source, HttpHeaders target)
@@ -82,15 +83,11 @@ namespace Vostok.Clusterclient.Transport.Sockets
             if (host != null)
                 target.Host = host;
         }
-        
-        private static bool NeedToSkipHeader(string name)
-        {
-            return
-                name.Equals(HeaderNames.ContentLength) ||
-                name.Equals(HeaderNames.Connection) ||
-                name.Equals(HeaderNames.Host) ||
-                name.Equals(HeaderNames.TransferEncoding);
-        }
+
+        private static bool NeedToSkipHeader(string name) => name.Equals(HeaderNames.ContentLength) ||
+                                                             name.Equals(HeaderNames.Connection) ||
+                                                             name.Equals(HeaderNames.Host) ||
+                                                             name.Equals(HeaderNames.TransferEncoding);
 
         private static bool IsContentHeader(string headerName)
         {

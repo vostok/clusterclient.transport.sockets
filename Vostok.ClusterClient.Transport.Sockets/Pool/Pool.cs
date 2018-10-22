@@ -7,7 +7,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Pool
         where T : class
     {
         public Pool(Func<T> resourceFactory)
-            :base(resourceFactory)
+            : base(resourceFactory)
         {
         }
     }

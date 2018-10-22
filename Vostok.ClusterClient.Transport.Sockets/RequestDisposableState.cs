@@ -1,7 +1,6 @@
 using System;
 using System.Net.Http;
 using System.Threading;
-using Vostok.Clusterclient.Core.Model;
 
 namespace Vostok.Clusterclient.Transport.Sockets
 {
@@ -29,6 +28,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
         private void DisposeRequest()
         {
             if (RequestMessage != null)
+            {
                 try
                 {
                     RequestMessage.Dispose();
@@ -40,11 +40,13 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 {
                     RequestMessage = null;
                 }
+            }
         }
 
         private void DisposeResponse()
         {
             if (ResponseMessage != null)
+            {
                 try
                 {
                     ResponseMessage.Dispose();
@@ -56,6 +58,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 {
                     ResponseMessage = null;
                 }
+            }
         }
     }
 }

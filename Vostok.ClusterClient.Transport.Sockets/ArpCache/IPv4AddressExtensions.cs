@@ -25,7 +25,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.ArpCache
             if (address.AddressFamily != AddressFamily.InterNetwork)
                 throw new ArgumentException("Address must be an IPv4 address.", nameof(address));
 
-            return (uint)address.Address;
+            return (uint) address.Address;
         }
     }
 }

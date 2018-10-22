@@ -10,11 +10,10 @@ namespace Vostok.Clusterclient.Transport.Sockets.ArpCache
 {
     internal static class NetworkHelper
     {
-        private static readonly TimeSpan CacheTTL = TimeSpan.FromDays(1);
-
         public static volatile List<IPAddress> GatewayAddresses;
 
         public static volatile List<IPv4Network> LocalNetworks;
+        private static readonly TimeSpan CacheTTL = TimeSpan.FromDays(1);
 
         static NetworkHelper()
         {

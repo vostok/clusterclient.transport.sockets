@@ -6,8 +6,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.ArpCache
 {
     internal class IPv4Network
     {
-        private readonly IPAddress networkAddress;
-        private readonly byte networkCidr;
         private readonly uint networkBegin;
         private readonly uint networkBroadcast;
 
@@ -22,8 +20,8 @@ namespace Vostok.Clusterclient.Transport.Sockets.ArpCache
             if (networkCidr > 32)
                 throw new ArgumentOutOfRangeException(nameof(networkCidr), "Network CIDR must be in [0; 32] range.");
 
-            this.networkAddress = networkAddress;
-            this.networkCidr = networkCidr;
+            NetworkAddress = networkAddress;
+            NetworkCidr = networkCidr;
 
             var networkAddressNumber = networkAddress.ToUInt32();
 
@@ -37,25 +35,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.ArpCache
             {
                 networkBroadcast = networkAddressNumber | (uint.MaxValue >> networkCidr);
             }
-        }
-
-        public IPAddress NetworkAddress => networkAddress;
-
-        public byte NetworkCidr => networkCidr;
-
-        public bool Contains(IPAddress address)
-        {
-            if (address.AddressFamily != AddressFamily.InterNetwork)
-                return false;
-
-            var rawAddress = address.ToUInt32();
-
-            return rawAddress >= networkBegin && rawAddress <= networkBroadcast;
-        }
-
-        public override string ToString()
-        {
-            return networkAddress + "/" + networkCidr;
         }
 
         public static bool TryParse(string input, out IPv4Network network)
@@ -93,5 +72,21 @@ namespace Vostok.Clusterclient.Transport.Sockets.ArpCache
 
             return network;
         }
+
+        public IPAddress NetworkAddress { get; }
+
+        public byte NetworkCidr { get; }
+
+        public bool Contains(IPAddress address)
+        {
+            if (address.AddressFamily != AddressFamily.InterNetwork)
+                return false;
+
+            var rawAddress = address.ToUInt32();
+
+            return rawAddress >= networkBegin && rawAddress <= networkBroadcast;
+        }
+
+        public override string ToString() => NetworkAddress + "/" + NetworkCidr;
     }
 }

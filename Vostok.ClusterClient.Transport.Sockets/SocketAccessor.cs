@@ -12,7 +12,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
     {
         private static readonly Func<Stream, Socket> empty = _ => null;
         private static readonly object sync = new object();
-        
+
         private static volatile Func<Stream, Socket> accessor;
 
         public static Socket GetSocket(Stream httpContentStream, ILog log)
@@ -32,7 +32,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 return null;
             }
         }
-        
+
         private static void EnsureInitialized(ILog log)
         {
             if (accessor == null)
@@ -44,7 +44,6 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 }
             }
         }
-
 
         private static Func<Stream, Socket> Build(ILog log)
         {
@@ -58,7 +57,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 var socketField = connectionField.FieldType.GetField("_socket", BindingFlags.Instance | BindingFlags.NonPublic);
                 var socketFieldExpr = Expression.Field(connectionFieldExpr, socketField);
                 var nullExpr = Expression.Constant(null, connectionField.FieldType);
-                
+
                 var condition = Expression.Condition(
                     Expression.Equal(connectionFieldExpr, nullExpr),
                     Expression.Constant(null, socketField.FieldType),

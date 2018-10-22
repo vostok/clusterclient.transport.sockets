@@ -8,7 +8,10 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
     internal class RequestEmptyContent : ClusterClientHttpContent
     {
         public RequestEmptyContent(SendContext sendContext, ILog log)
-            : base(sendContext, log) => Headers.ContentLength = 0;
+            : base(sendContext, log)
+        {
+            Headers.ContentLength = 0;
+        }
 
         protected override bool TryComputeLength(out long length)
         {

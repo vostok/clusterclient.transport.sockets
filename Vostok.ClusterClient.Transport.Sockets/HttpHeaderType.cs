@@ -12,6 +12,6 @@ namespace Vostok.Clusterclient.Transport.Sockets
         Content = 8,
         Custom = 16, // 0x10
         All = Custom | Content | Response | Request | General, // 0x1F
-        None = 0,
+        None = 0
     }
 }

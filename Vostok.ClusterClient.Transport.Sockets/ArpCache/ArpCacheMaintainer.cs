@@ -19,7 +19,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.ArpCache
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return;
-            
+
             ArpRequestsWork = true;
             ActiveAddresses = new ConcurrentDictionary<IPAddress, DateTime>();
             ActiveAddressesTtl = TimeSpan.FromDays(1);
@@ -33,7 +33,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.ArpCache
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return;
-            
+
             if (ActiveAddresses.TryGetValue(address, out var timestamp))
             {
                 // (iloktionov): Не будем каждый раз записывать timestamp в словарь, чтобы избежать лишнего lock contention.

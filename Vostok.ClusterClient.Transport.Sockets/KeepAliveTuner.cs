@@ -38,10 +38,6 @@ namespace Vostok.Clusterclient.Transport.Sockets
             {
                 socket.IOControl(IOControlCode.KeepAliveValues, keepAliveValues, null);
             }
-            else
-            {
-                // see: https://github.com/dotnet/corefx/pull/29963
-            }
         }
     }
 }

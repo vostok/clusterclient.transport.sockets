@@ -21,7 +21,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
         public HttpRequestMessage Create(Request request, CancellationToken cancellationToken, out SendContext sendContext)
         {
             sendContext = new SendContext();
-            
+
             var method = TranslateRequestMethod(request.Method);
             var content = CreateContent(request, sendContext, cancellationToken);
 
@@ -33,20 +33,6 @@ namespace Vostok.Clusterclient.Transport.Sockets
             HeadersConverter.Fill(request, message, log);
 
             return message;
-        }
-
-        private HttpContent CreateContent(Request request, SendContext sendContext, CancellationToken cancellationToken)
-        {
-            var content = request.Content;
-            var streamContent = request.StreamContent;
-
-            if (content != null)
-                return new RequestByteArrayContent(request, sendContext, pool, log, cancellationToken);
-            if (streamContent != null)
-                return new RequestStreamContent(request, sendContext, pool, log, cancellationToken);
-
-            // (epeshk): return empty 'content' which extract Socket instance from write stream
-            return new RequestEmptyContent(sendContext, log);
         }
 
         private static HttpMethod TranslateRequestMethod(string httpMethod)
@@ -72,6 +58,20 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 default:
                     return new HttpMethod(httpMethod);
             }
+        }
+
+        private HttpContent CreateContent(Request request, SendContext sendContext, CancellationToken cancellationToken)
+        {
+            var content = request.Content;
+            var streamContent = request.StreamContent;
+
+            if (content != null)
+                return new RequestByteArrayContent(request, sendContext, pool, log, cancellationToken);
+            if (streamContent != null)
+                return new RequestStreamContent(request, sendContext, pool, log, cancellationToken);
+
+            // (epeshk): return empty 'content' which extract Socket instance from write stream
+            return new RequestEmptyContent(sendContext, log);
         }
     }
 }

@@ -11,7 +11,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
     internal static class HttpHeadersUnlocker
     {
         private static readonly object sync = new object();
-        private static readonly Action<HttpHeaders> empty = delegate {  };
+        private static readonly Action<HttpHeaders> empty = delegate {};
         private static volatile Action<HttpHeaders> unlocker;
 
         public static bool TryUnlockRestrictedHeaders(HttpHeaders headers, ILog log)

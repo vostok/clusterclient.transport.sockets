@@ -13,7 +13,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
 
         protected ClusterClientHttpContent(SendContext sendContext, ILog log)
         {
-            this.SendContext = sendContext;
+            SendContext = sendContext;
             Log = log;
         }
 

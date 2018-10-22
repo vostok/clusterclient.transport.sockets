@@ -15,14 +15,27 @@ namespace Vostok.Clusterclient.Transport.Sockets
         public Stream Stream;
         public ResponseCode? ErrorCode;
 
+        public ResponseReadResult(Content content)
+            : this(content, null, null)
+        {
+        }
+
+        public ResponseReadResult(Stream stream)
+            : this(null, stream, null)
+        {
+        }
+
+        public ResponseReadResult(ResponseCode errorCode)
+            : this(null, null, errorCode)
+        {
+        }
+
         private ResponseReadResult(Content content, Stream stream, ResponseCode? code)
-            => (Content, Stream, ErrorCode) = (content, stream, code);
-        
-        public ResponseReadResult(Content content) : this(content, null, null) { }
-        public ResponseReadResult(Stream stream) : this(null, stream, null) { }
-        public ResponseReadResult(ResponseCode errorCode) : this(null, null, errorCode) { }
+        {
+            (Content, Stream, ErrorCode) = (content, stream, code);
+        }
     }
-    
+
     internal class ResponseReader
     {
         private readonly IPool<byte[]> pool;
@@ -39,7 +52,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
         public async Task<ResponseReadResult> ReadResponseBodyAsync(HttpResponseMessage responseMessage, CancellationToken cancellationToken)
         {
             var contentLength = responseMessage.Content.Headers.ContentLength;
-            
+
             if (NeedToStreamResponseBody(contentLength))
             {
                 return new ResponseReadResult(await GetResponseWithStreamAsync(responseMessage).ConfigureAwait(false));
@@ -49,7 +62,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
             {
                 if (contentLength == 0)
                     return new ResponseReadResult(Content.Empty);
-                
+
                 if (contentLength > settings.MaxResponseBodySize)
                     return new ResponseReadResult(ResponseCode.InsufficientStorage);
 
@@ -90,7 +103,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
             using (var stream = await responseMessage.Content.ReadAsStreamAsync().ConfigureAwait(false))
             {
                 var array = settings.BufferFactory(contentLength);
-                
+
                 var totalBytesRead = 0;
 
                 // Reference to buffer used in ReadAsync will be stored in Socket instance. We want to avoid long-lived buffers in LOH
@@ -149,16 +162,11 @@ namespace Vostok.Clusterclient.Transport.Sockets
             }
         }
 
-        private Task<Stream> GetResponseWithStreamAsync(HttpResponseMessage responseMessage)
-        {
-            return responseMessage.Content.ReadAsStreamAsync();
-        }
-
+        private Task<Stream> GetResponseWithStreamAsync(HttpResponseMessage responseMessage) => responseMessage.Content.ReadAsStreamAsync();
 
         private void LogReceiveBodyFailure(Request request, Exception error)
         {
             log.Error(error, "Error in receiving request body from " + request.Url.Authority);
         }
-
     }
 }
