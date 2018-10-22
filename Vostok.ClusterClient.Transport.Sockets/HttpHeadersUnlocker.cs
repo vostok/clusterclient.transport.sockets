@@ -10,8 +10,8 @@ namespace Vostok.Clusterclient.Transport.Sockets
 {
     internal static class HttpHeadersUnlocker
     {
-        private static readonly object sync = new object();
-        private static readonly Action<HttpHeaders> empty = delegate {};
+        private static readonly object Sync = new object();
+        private static readonly Action<HttpHeaders> Empty = delegate {};
         private static volatile Action<HttpHeaders> unlocker;
 
         public static bool TryUnlockRestrictedHeaders(HttpHeaders headers, ILog log)
@@ -24,10 +24,12 @@ namespace Vostok.Clusterclient.Transport.Sockets
         {
             if (unlocker == null)
             {
-                lock (sync)
+                lock (Sync)
                 {
                     if (unlocker == null)
                         unlocker = BuildUnlocker(log);
+                    if (!Test(log))
+                        unlocker = Empty;
                 }
             }
         }
@@ -48,7 +50,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
             catch (Exception e)
             {
                 log.ForContext(typeof(HttpHeadersUnlocker)).Error(e, "Can't unlock HttpHeaders");
-                return empty;
+                return Empty;
             }
         }
 
@@ -78,10 +80,10 @@ namespace Vostok.Clusterclient.Transport.Sockets
             }
             catch (Exception error)
             {
-                if (unlocker != empty)
+                if (unlocker != Empty)
                     log.ForContext(typeof(HttpHeadersUnlocker)).Warn(error, "Failed to unlock HttpHeaders for unsafe assignment.");
 
-                unlocker = empty;
+                unlocker = Empty;
                 return false;
             }
 
