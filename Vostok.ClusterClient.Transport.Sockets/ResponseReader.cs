@@ -163,10 +163,5 @@ namespace Vostok.Clusterclient.Transport.Sockets
         }
 
         private Task<Stream> GetResponseWithStreamAsync(HttpResponseMessage responseMessage) => responseMessage.Content.ReadAsStreamAsync();
-
-        private void LogReceiveBodyFailure(Request request, Exception error)
-        {
-            log.Error(error, "Error in receiving request body from " + request.Url.Authority);
-        }
     }
 }
