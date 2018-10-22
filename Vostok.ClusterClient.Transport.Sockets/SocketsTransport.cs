@@ -223,6 +223,9 @@ namespace Vostok.Clusterclient.Transport.Sockets
                     ArpCacheMaintainer.ReportAddress(ipEndPoint.Address);
             }
 
+            if (sendContext.Response != null)
+                return sendContext.Response;
+
             var responseCode = (ResponseCode) (int) state.ResponseMessage.StatusCode;
 
             var headers = HeadersConverter.Create(state.ResponseMessage);
