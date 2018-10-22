@@ -11,7 +11,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
 {
     internal class RequestByteArrayContent : ClusterClientHttpContent
     {
-        private readonly Request request;
+        private readonly Content content;
         private readonly IPool<byte[]> pool;
         private readonly CancellationToken cancellationToken;
 
@@ -21,62 +21,42 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
             IPool<byte[]> pool,
             ILog log,
             CancellationToken cancellationToken)
-            : base(context, log)
+            : base(request, context, log)
         {
-            this.request = request;
+            content = request.Content ?? throw new ArgumentNullException(nameof(request.Content), "Bug in code: content is null.");
             this.pool = pool;
             this.cancellationToken = cancellationToken;
-
-            Headers.ContentLength = request.Content.Length;
+            
+            Headers.ContentLength = content.Length;
         }
 
         protected override async Task SerializeAsync(Stream stream, TransportContext context)
         {
-            var content = request.Content;
-
-            try
+            // (epeshk): avoid storing large buffers in Socket private fields.
+            if (content.Buffer.Length < SocketsTransportConstants.LOHObjectSizeThreshold)
             {
-                // await stream.WriteAsync(new ReadOnlyMemory<byte>(content.Buffer, content.Offset, content.Length), cancellationToken);
-                // (epeshk): avoid storing large buffers in Socket private fields.
-                if (content.Buffer.Length < SocketsTransportConstants.LOHObjectSizeThreshold)
-                {
-                    await stream.WriteAsync(content.Buffer, content.Offset, content.Length, cancellationToken).ConfigureAwait(false);
-                    return;
-                }
-
-                using (pool.AcquireHandle(out var buffer))
-                {
-                    var index = content.Offset;
-                    var end = content.Offset + content.Length;
-                    while (index < end)
-                    {
-                        var size = Math.Min(SocketsTransportConstants.PooledBufferSize, end - index);
-                        Buffer.BlockCopy(content.Buffer, index, buffer, 0, size);
-                        await stream.WriteAsync(buffer, 0, size, cancellationToken).ConfigureAwait(false);
-                        index += size;
-                    }
-                }
+                await stream.WriteAsync(content.Buffer, content.Offset, content.Length, cancellationToken).ConfigureAwait(false);
+                return;
             }
-            catch (OperationCanceledException)
+
+            using (pool.AcquireHandle(out var buffer))
             {
-                throw;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                LogSendBodyFailure(request.Url, e);
+                var index = content.Offset;
+                var end = content.Offset + content.Length;
+                while (index < end)
+                {
+                    var size = Math.Min(SocketsTransportConstants.PooledBufferSize, end - index);
+                    Buffer.BlockCopy(content.Buffer, index, buffer, 0, size);
+                    await stream.WriteAsync(buffer, 0, size, cancellationToken).ConfigureAwait(false);
+                    index += size;
+                }
             }
         }
 
         protected override bool TryComputeLength(out long length)
         {
-            length = request.Content.Length;
+            length = content.Length;
             return true;
-        }
-
-        private void LogSendBodyFailure(Uri uri, Exception error)
-        {
-            Log.Error(error, "Error in sending request body to " + uri.Authority);
         }
     }
 }

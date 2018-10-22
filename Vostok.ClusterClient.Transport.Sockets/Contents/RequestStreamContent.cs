@@ -14,6 +14,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
         private readonly CancellationToken cancellationToken;
         private readonly Request request;
         private readonly IPool<byte[]> arrayPool;
+        private IStreamContent streamContent;
 
         public RequestStreamContent(
             Request request,
@@ -21,9 +22,9 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
             IPool<byte[]> arrayPool,
             ILog log,
             CancellationToken cancellationToken)
-            : base(sendContext, log)
+            : base(request, sendContext, log)
         {
-            this.request = request;
+            streamContent = request.StreamContent ?? throw new ArgumentNullException(nameof(request.StreamContent), "Bug in code: StreamContent is null.");
             this.arrayPool = arrayPool;
             this.cancellationToken = cancellationToken;
 
@@ -32,74 +33,52 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
 
         protected override async Task SerializeAsync(Stream stream, TransportContext context)
         {
-            var streamContent = request.StreamContent;
             var bodyStream = streamContent.Stream;
             var bytesToSend = streamContent.Length ?? long.MaxValue;
             var bytesSent = 0L;
 
-            try
+            using (arrayPool.AcquireHandle(out var buffer))
             {
-                using (arrayPool.AcquireHandle(out var buffer))
+                while (bytesSent < bytesToSend)
                 {
-                    while (bytesSent < bytesToSend)
+                    var bytesToRead = (int) Math.Min(buffer.Length, bytesToSend - bytesSent);
+
+                    int bytesRead;
+
+                    try
                     {
-                        var bytesToRead = (int) Math.Min(buffer.Length, bytesToSend - bytesSent);
-
-                        int bytesRead;
-
-                        try
-                        {
-                            bytesRead = await bodyStream.ReadAsync(buffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
-                        }
-                        catch (StreamAlreadyUsedException)
-                        {
-                            throw;
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            throw;
-                        }
-                        catch (Exception error)
-                        {
-                            LogUserStreamFailure(error);
-                            SendContext.Response = new Response(ResponseCode.StreamInputFailure);
-                            return;
-                        }
-
-                        if (bytesRead == 0)
-                            break;
-
-                        await stream.WriteAsync(buffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
-
-                        bytesSent += bytesRead;
+                        bytesRead = await bodyStream.ReadAsync(buffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
                     }
+                    catch (StreamAlreadyUsedException)
+                    {
+                        throw;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch (Exception error)
+                    {
+                        LogUserStreamFailure(error);
+                        SendContext.Response = new Response(ResponseCode.StreamInputFailure);
+                        return;
+                    }
+
+                    if (bytesRead == 0)
+                        break;
+
+                    await stream.WriteAsync(buffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
+
+                    bytesSent += bytesRead;
                 }
             }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (StreamAlreadyUsedException)
-            {
-                throw;
-            }
-            catch (Exception e)
-            {
-                LogSendBodyFailure(request.Url, e);
-                SendContext.Response = new Response(ResponseCode.SendFailure);
-            }
+      
         }
 
         protected override bool TryComputeLength(out long length)
         {
-            var streamContent = request.StreamContent;
             length = streamContent.Length ?? 0;
-            return streamContent.Length != null && streamContent.Length >= 0;
-        }
-
-        private void LogSendBodyFailure(Uri uri, Exception error)
-        {
-            Log.Error(error, "Error in sending request body to " + uri.Authority);
+            return streamContent.Length != null;
         }
 
         private void LogUserStreamFailure(Exception error)

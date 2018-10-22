@@ -71,7 +71,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 return new RequestStreamContent(request, sendContext, pool, log, cancellationToken);
 
             // (epeshk): return empty 'content' which extract Socket instance from write stream
-            return new RequestEmptyContent(sendContext, log);
+            return new RequestEmptyContent(request, sendContext, log);
         }
     }
 }
