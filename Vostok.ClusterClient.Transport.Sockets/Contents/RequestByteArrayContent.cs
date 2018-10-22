@@ -45,7 +45,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
                 var end = content.Offset + content.Length;
                 while (index < end)
                 {
-                    var size = Math.Min(SocketsTransportConstants.PooledBufferSize, end - index);
+                    var size = Math.Min(buffer.Length, end - index);
                     Buffer.BlockCopy(content.Buffer, index, buffer, 0, size);
                     await stream.WriteAsync(buffer, 0, size, cancellationToken).ConfigureAwait(false);
                     index += size;

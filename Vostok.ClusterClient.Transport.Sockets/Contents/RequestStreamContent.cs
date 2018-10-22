@@ -12,9 +12,8 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
     internal class RequestStreamContent : ClusterClientHttpContent
     {
         private readonly CancellationToken cancellationToken;
-        private readonly Request request;
         private readonly IPool<byte[]> arrayPool;
-        private IStreamContent streamContent;
+        private readonly IStreamContent streamContent;
 
         public RequestStreamContent(
             Request request,

@@ -13,14 +13,14 @@ namespace Vostok.Clusterclient.Transport.Sockets.ArpCache
         private static readonly TimeSpan ActiveAddressesTtl;
         private static readonly TimeSpan ActiveAddressesTtlHalf;
         private static readonly TimeSpan WarmupPeriod;
-        private static volatile bool ArpRequestsWork;
+        private static volatile bool arpRequestsWork;
 
         static ArpCacheMaintainer()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return;
 
-            ArpRequestsWork = true;
+            arpRequestsWork = true;
             ActiveAddresses = new ConcurrentDictionary<IPAddress, DateTime>();
             ActiveAddressesTtl = TimeSpan.FromDays(1);
             ActiveAddressesTtlHalf = ActiveAddressesTtl.Divide(2);
@@ -88,7 +88,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.ArpCache
 
         private static void SendARP(IPAddress address)
         {
-            if (!ArpRequestsWork)
+            if (!arpRequestsWork)
                 return;
 
             try
@@ -101,7 +101,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.ArpCache
             }
             catch
             {
-                ArpRequestsWork = false;
+                arpRequestsWork = false;
             }
         }
 
