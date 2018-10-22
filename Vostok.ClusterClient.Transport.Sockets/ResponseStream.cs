@@ -8,9 +8,9 @@ namespace Vostok.Clusterclient.Transport.Sockets
     internal class ResponseStream : Stream
     {
         private readonly Stream stream;
-        private readonly RequestState state;
+        private readonly RequestDisposableState state;
 
-        public ResponseStream(Stream stream, RequestState state)
+        public ResponseStream(Stream stream, RequestDisposableState state)
         {
             this.stream = stream;
             this.state = state;
@@ -44,6 +44,11 @@ namespace Vostok.Clusterclient.Transport.Sockets
         }
 
         public override int Read(Span<byte> buffer) => stream.Read(buffer);
-        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) => stream.ReadAsync(buffer, cancellationToken);
+        
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+            => stream.ReadAsync(buffer, cancellationToken);
+                
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+            => stream.ReadAsync(buffer, offset, count, cancellationToken);
     }
 }

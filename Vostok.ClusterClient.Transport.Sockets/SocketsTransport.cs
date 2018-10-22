@@ -28,6 +28,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
         private readonly ConcurrentDictionary<TimeSpan, Lazy<HttpClient>> clients;
         private readonly HttpRequestMessageFactory requestFactory;
         private readonly byte[] keepAliveValues;
+        private readonly ResponseReader responseReader;
 
         /// <inheritdoc />
         public TransportCapabilities Capabilities { get; } = TransportCapabilities.RequestStreaming | TransportCapabilities.ResponseStreaming;
@@ -46,6 +47,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
             this.pool = new Pool<byte[]>(() => new byte[SocketsTransportConstants.PooledBufferSize]);
             
             requestFactory = new HttpRequestMessageFactory(pool, log);
+            responseReader = new ResponseReader(settings, pool, log);
 
             keepAliveValues = KeepAliveTuner.GetKeepAliveValues(settings);
             
@@ -136,12 +138,16 @@ namespace Vostok.Clusterclient.Transport.Sockets
         {
             try
             {
-                using (var state = new RequestState(request))
+                using (var state = new RequestDisposableState())
                     return await SendOnceAsync(state, request, connectionTimeout, cancellationToken).ConfigureAwait(false);
             }
             catch (StreamAlreadyUsedException)
             {
                 throw;
+            }
+            catch (OperationCanceledException)
+            {
+                return Responses.Canceled;
             }
             catch (Exception e)
             {
@@ -150,7 +156,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
             }
         }
 
-        private async Task<Response> SendOnceAsync(RequestState state, Request request, TimeSpan connectionTimeout, CancellationToken cancellationToken)
+        private async Task<Response> SendOnceAsync(RequestDisposableState state, Request request, TimeSpan connectionTimeout, CancellationToken cancellationToken)
         {
             state.RequestMessage = requestFactory.Create(request, cancellationToken, out var sendContext);
 
@@ -168,10 +174,6 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 log.Warn(e, message);
                 return Responses.ConnectFailure;
             }
-            catch (OperationCanceledException)
-            {
-                return Responses.Canceled;
-            }
             
             var socket = sendContext.Socket;
             if (socket != null)
@@ -186,149 +188,28 @@ namespace Vostok.Clusterclient.Transport.Sockets
                     ArpCacheMaintainer.ReportAddress(ipEndPoint.Address);
             }
 
-            state.ResponseCode = (ResponseCode) (int) state.ResponseMessage.StatusCode;
+            var responseCode = (ResponseCode) (int) state.ResponseMessage.StatusCode;
 
-            state.Headers = HeadersConverter.Create(state.ResponseMessage);
+            var headers = HeadersConverter.Create(state.ResponseMessage);
 
-            var contentLength = state.ResponseMessage.Content.Headers.ContentLength;
-
-            try
-            {
-                if (NeedToStreamResponseBody(contentLength))
-                {
-                    return await GetResponseWithStreamAsync(state).ConfigureAwait(false);
-                }
-
-                if (contentLength != null)
-                {
-                    if (contentLength > settings.MaxResponseBodySize)
-                        return new Response(ResponseCode.InsufficientStorage, headers: state.Headers);
-
-                    return await GetResponseWithKnownContentLength(state, (int) contentLength, cancellationToken).ConfigureAwait(false);
-                }
-
-                return await GetResponseWithUnknownContentLength(state, cancellationToken).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                return Responses.Canceled;
-            }
+            var responseReadResult = await responseReader
+                .ReadResponseBodyAsync(state.ResponseMessage, cancellationToken)
+                .ConfigureAwait(false);
+            
+            if (responseReadResult.Content != null)
+                return new Response(responseCode, responseReadResult.Content, headers);
+            if (responseReadResult.ErrorCode != null)
+                return new Response(responseReadResult.ErrorCode.Value, null, headers);
+            if (responseReadResult.Stream == null)
+                return new Response(responseCode, null, headers);
+            
+            state.PreventNextDispose();
+            return new Response(responseCode, null, headers, new ResponseStream(responseReadResult.Stream, state));
         }
 
         private static bool IsConnectionFailure(HttpRequestException e, CancellationToken cancellationToken)
             => e.InnerException is SocketException se && IsConnectionFailure(se.SocketErrorCode) ||
                e.InnerException is TaskCanceledException && !cancellationToken.IsCancellationRequested;
-
-        private async Task<Response> GetResponseWithUnknownContentLength(RequestState state, CancellationToken cancellationToken)
-        {
-            try
-            {
-                using (var stream = await state.ResponseMessage.Content.ReadAsStreamAsync().ConfigureAwait(false))
-                using (var memoryStream = new MemoryStream())
-                using (pool.AcquireHandle(out var buffer))
-                {
-                    while (true)
-                    {
-                        var bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
-                        if (bytesRead == 0)
-                            break;
-
-                        memoryStream.Write(buffer, 0, bytesRead);
-
-                        if (memoryStream.Length > settings.MaxResponseBodySize)
-                            return new Response(ResponseCode.InsufficientStorage, headers: state.Headers);
-                    }
-
-                    var content = new Content(memoryStream.GetBuffer(), 0, (int) memoryStream.Length);
-                    return new Response(state.ResponseCode, content, state.Headers);
-                }
-            }
-            catch (Exception e)
-            {
-                LogReceiveBodyFailure(state.Request, e);
-                return new Response(ResponseCode.ReceiveFailure, headers: state.Headers);
-            }
-        }
-
-        private async Task<Response> GetResponseWithKnownContentLength(RequestState state, int contentLength, CancellationToken cancellationToken)
-        {
-            try
-            {
-                using (var stream = await state.ResponseMessage.Content.ReadAsStreamAsync().ConfigureAwait(false))
-                {
-                    var array = settings.BufferFactory(contentLength);
-                    
-                    var totalBytesRead = 0;
-
-                    // Reference to buffer used in ReadAsync will be stored in Socket instance. We want to avoid long-lived buffers in LOH
-                    // gcroot sample output for buffer used in .ReadAsync:
-                    // -> System.Net.Sockets.Socket
-                    // -> System.Net.Sockets.Socket+CachedEventArgs
-                    // -> System.Net.Sockets.Socket+AwaitableSocketAsyncEventArgs
-                    // -> System.Byte[]
-                    if (contentLength < SocketsTransportConstants.LOHObjectSizeThreshold)
-                    {
-                        while (totalBytesRead < contentLength)
-                        {
-                            var bytesToRead = Math.Min(contentLength - totalBytesRead, SocketsTransportConstants.PreferredReadSize);
-                            var bytesRead = await stream.ReadAsync(array, totalBytesRead, bytesToRead, cancellationToken).ConfigureAwait(false);
-                            if (bytesRead == 0)
-                                break;
-
-                            totalBytesRead += bytesRead;
-                        }
-                    }
-                    else
-                    {
-                        using (pool.AcquireHandle(out var buffer))
-                        {
-                            while (totalBytesRead < contentLength)
-                            {
-                                var bytesToRead = Math.Min(contentLength - totalBytesRead, buffer.Length);
-                                var bytesRead = await stream.ReadAsync(buffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
-                                if (bytesRead == 0)
-                                    break;
-
-                                Buffer.BlockCopy(buffer, 0, array, totalBytesRead, bytesRead);
-
-                                totalBytesRead += bytesRead;
-                            }
-                        }
-                    }
-
-                    if (totalBytesRead < contentLength)
-                        throw new EndOfStreamException($"Response stream ended prematurely. Read only {totalBytesRead} byte(s), but Content-Length specified {contentLength}.");
-
-                    return new Response(state.ResponseCode, new Content(array, 0, contentLength), state.Headers);
-                }
-            }
-            catch (Exception e)
-            {
-                LogReceiveBodyFailure(state.Request, e);
-                return new Response(ResponseCode.ReceiveFailure, headers: state.Headers);
-            }
-        }
-
-        private bool NeedToStreamResponseBody(long? length)
-        {
-            try
-            {
-                return settings.UseResponseStreaming(length);
-            }
-            catch (Exception error)
-            {
-                log.Error(error);
-                return false;
-            }
-        }
-
-        private async Task<Response> GetResponseWithStreamAsync(RequestState state)
-        {
-            var stream = await state.ResponseMessage.Content.ReadAsStreamAsync().ConfigureAwait(false);
-            var wrappedStream = new ResponseStream(stream, state);
-            state.PreventNextDispose();
-            return new Response(state.ResponseCode, null, state.Headers, wrappedStream);
-        }
 
 
         private void LogRequestTimeout(Request request, TimeSpan timeout)
@@ -339,11 +220,6 @@ namespace Vostok.Clusterclient.Transport.Sockets
         private void LogUnknownException(Exception error)
         {
             log.Error(error, "Unknown error in sending request.");
-        }
-
-        private void LogReceiveBodyFailure(Request request, Exception error)
-        {
-            log.Error(error, "Error in receiving request body from " + request.Url.Authority);
         }
 
         private void LogFailedToWaitForRequestAbort()

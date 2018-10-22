@@ -5,22 +5,12 @@ using Vostok.Clusterclient.Core.Model;
 
 namespace Vostok.Clusterclient.Transport.Sockets
 {
-    internal class RequestState : IDisposable
+    internal class RequestDisposableState : IDisposable
     {
         private int disposeBarrier;
 
-        public RequestState(Request request)
-        {
-            Request = request;
-        }
-
         public HttpRequestMessage RequestMessage { get; set; }
         public HttpResponseMessage ResponseMessage { get; set; }
-
-        public Headers Headers { get; set; }
-
-        public ResponseCode ResponseCode { get; set; }
-        public Request Request { get; }
 
         public void PreventNextDispose()
         {

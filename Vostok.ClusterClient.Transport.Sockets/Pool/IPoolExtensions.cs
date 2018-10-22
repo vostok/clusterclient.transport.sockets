@@ -2,7 +2,7 @@
 
 namespace Vostok.Clusterclient.Transport.Sockets.Pool
 {
-    internal static class IPoolExtensions
+    internal static class PoolExtensions
     {
         /// <summary>
         /// Acquires a resource from pool and wraps it into a disposable handle which releases resource on disposal.
