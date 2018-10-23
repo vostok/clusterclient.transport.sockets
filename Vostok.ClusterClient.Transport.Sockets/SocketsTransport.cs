@@ -29,14 +29,12 @@ namespace Vostok.Clusterclient.Transport.Sockets
         /// <param name="settings"></param>
         /// <param name="log"></param>
         public SocketsTransport(SocketsTransportSettings settings, ILog log)
-            : this(settings, log, null)
+            : this(settings.Clone(), log, null)
         {
         }
 
         internal SocketsTransport(SocketsTransportSettings settings, ILog log, ISocketsTransportRequestSender sender)
         {
-            settings = settings.Clone();
-
             this.settings = settings;
             this.log = log;
 
