@@ -1,11 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -14,11 +7,10 @@ using Microsoft.Diagnostics.Tracing.Parsers;
 using Microsoft.Diagnostics.Tracing.Session;
 using NUnit.Framework;
 using Vostok.Clusterclient.Core.Model;
-using Vostok.Clusterclient.Transport.Sockets.Tests.Functional;
 using Vostok.Clusterclient.Transport.Tests.Shared.Functional.Helpers;
 using Vostok.Commons.Testing;
 
-namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
+namespace Vostok.Clusterclient.Transport.Sockets.Tests.Functional
 {
     [Explicit]
     internal class ConnectionIdleTimeoutTests : TransportTestsBase

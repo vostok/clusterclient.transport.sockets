@@ -6,6 +6,7 @@ using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using NUnit.Framework;
 using Vostok.Clusterclient.Core.Model;
+using Vostok.Clusterclient.Transport.Sockets.Hacks;
 using Vostok.Clusterclient.Transport.Sockets.Messages;
 using Vostok.Clusterclient.Transport.Sockets.ResponseReading;
 using Vostok.Clusterclient.Transport.Sockets.Sender;
@@ -20,7 +21,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
         private IHttpRequestMessageFactory requestFactory;
         private IResponseReader responseReader;
         private SocketsTransportRequestSender sender;
-        private IKeepAliveTuner keepAliveTuner;
+        private ISocketTuner socketTuner;
         private ILog log;
 
         [SetUp]
@@ -29,10 +30,10 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
             settings = new SocketsTransportSettings();
             requestFactory = Substitute.For<IHttpRequestMessageFactory>();
             responseReader = Substitute.For<IResponseReader>();
-            keepAliveTuner = Substitute.For<IKeepAliveTuner>();
+            socketTuner = Substitute.For<ISocketTuner>();
             log = new ConsoleLog();
             
-            sender = new SocketsTransportRequestSender(settings, requestFactory, responseReader, keepAliveTuner, log);
+            sender = new SocketsTransportRequestSender(settings, requestFactory, responseReader, socketTuner, log);
         }
 
         [TearDown]
