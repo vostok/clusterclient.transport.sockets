@@ -24,25 +24,33 @@ namespace Vostok.Clusterclient.Transport.Sockets
 
         public async Task<ResponseReadResult> ReadResponseBodyAsync(HttpResponseMessage responseMessage, CancellationToken cancellationToken)
         {
-            var contentLength = responseMessage.Content.Headers.ContentLength;
-
-            if (NeedToStreamResponseBody(contentLength))
+            try
             {
-                return new ResponseReadResult(await GetResponseWithStreamAsync(responseMessage).ConfigureAwait(false));
-            }
+                var contentLength = responseMessage.Content.Headers.ContentLength;
 
-            if (contentLength != null)
+                if (NeedToStreamResponseBody(contentLength))
+                {
+                    return new ResponseReadResult(await GetResponseWithStreamAsync(responseMessage).ConfigureAwait(false));
+                }
+
+                if (contentLength != null)
+                {
+                    if (contentLength == 0)
+                        return new ResponseReadResult(Content.Empty);
+
+                    if (contentLength > settings.MaxResponseBodySize)
+                        return new ResponseReadResult(ResponseCode.InsufficientStorage);
+
+                    return await GetResponseWithKnownContentLength(responseMessage, (int) contentLength, cancellationToken).ConfigureAwait(false);
+                }
+
+                return await GetResponseWithUnknownContentLength(responseMessage, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception e)
             {
-                if (contentLength == 0)
-                    return new ResponseReadResult(Content.Empty);
-
-                if (contentLength > settings.MaxResponseBodySize)
-                    return new ResponseReadResult(ResponseCode.InsufficientStorage);
-
-                return await GetResponseWithKnownContentLength(responseMessage, (int) contentLength, cancellationToken).ConfigureAwait(false);
+                log.Error(e);
+                return new ResponseReadResult(ResponseCode.ReceiveFailure);
             }
-
-            return await GetResponseWithUnknownContentLength(responseMessage, cancellationToken).ConfigureAwait(false);
         }
 
         private async Task<ResponseReadResult> GetResponseWithUnknownContentLength(HttpResponseMessage message, CancellationToken cancellationToken)

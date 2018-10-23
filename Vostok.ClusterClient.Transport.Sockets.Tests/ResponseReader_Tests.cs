@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading;
 using FluentAssertions;
 using NUnit.Framework;
+using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Transport.Sockets.Pool;
 using Vostok.Logging.Abstractions;
 
@@ -11,11 +12,13 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
 {
     internal class ResponseReader_Tests
     {
-        private SocketsTransportSettings settings = new SocketsTransportSettings();
+        private SocketsTransportSettings settings;
         private ResponseReader reader;
+        
         [SetUp]
         public void Setup()
         {
+            settings = new SocketsTransportSettings();
             reader = new ResponseReader(
                 settings,
                 new Pool<byte[]>(() => new byte[100]),
@@ -101,6 +104,25 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
                 .ToArray()
                 .Should()
                 .BeEquivalentTo(bytes);
+        }
+        
+        [TestCase(1, 2)]
+        [TestCase(100000, 100001)]
+        public void Should_save_ReceiveFailure_error_code_when_content_length_is_wrong(int length, int? contentLength)
+        {
+            var bytes = new byte[length];
+            new Random(42).NextBytes(bytes);
+
+            var response = new HttpResponseMessage
+            {
+                Content = new ByteArrayContent(bytes, 0, length) {Headers = { ContentLength = contentLength}}
+            };
+
+            var result = reader.ReadResponseBodyAsync(response, CancellationToken.None).GetAwaiter().GetResult();
+
+            result.Content.Should().BeNull();
+            result.Stream.Should().BeNull();
+            result.ErrorCode.Should().Be(ResponseCode.ReceiveFailure);
         }
     }
 }
