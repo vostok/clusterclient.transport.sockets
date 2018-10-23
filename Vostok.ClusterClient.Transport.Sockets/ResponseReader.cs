@@ -9,33 +9,6 @@ using Vostok.Logging.Abstractions;
 
 namespace Vostok.Clusterclient.Transport.Sockets
 {
-    internal struct ResponseReadResult
-    {
-        public Content Content;
-        public Stream Stream;
-        public ResponseCode? ErrorCode;
-
-        public ResponseReadResult(Content content)
-            : this(content, null, null)
-        {
-        }
-
-        public ResponseReadResult(Stream stream)
-            : this(null, stream, null)
-        {
-        }
-
-        public ResponseReadResult(ResponseCode errorCode)
-            : this(null, null, errorCode)
-        {
-        }
-
-        private ResponseReadResult(Content content, Stream stream, ResponseCode? code)
-        {
-            (Content, Stream, ErrorCode) = (content, stream, code);
-        }
-    }
-
     internal class ResponseReader
     {
         private readonly IPool<byte[]> pool;
