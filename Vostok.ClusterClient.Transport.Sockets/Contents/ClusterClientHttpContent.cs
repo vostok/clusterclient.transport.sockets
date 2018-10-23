@@ -47,7 +47,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
 
         private void LogSendBodyFailure(Uri uri, Exception error)
         {
-            Log.Error(error, "Error in sending request body to " + uri.Authority);
+            Log.Warn(error, "Error in sending request body to {Target}", uri.Authority);
         }
     }
 }

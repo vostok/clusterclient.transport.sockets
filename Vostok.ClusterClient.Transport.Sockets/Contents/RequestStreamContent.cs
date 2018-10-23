@@ -82,7 +82,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
 
         private void LogUserStreamFailure(Exception error)
         {
-            Log.Error(error, "Failure in reading input stream while sending request body.");
+            Log.Warn(error, "Failure in reading input stream while sending request body.");
         }
     }
 }

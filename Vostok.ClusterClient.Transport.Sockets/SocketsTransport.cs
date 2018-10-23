@@ -249,17 +249,22 @@ namespace Vostok.Clusterclient.Transport.Sockets
 
         private void LogRequestTimeout(Request request, TimeSpan timeout)
         {
-            log.Error($"Request timed out. Target = {request.Url.Authority}. Timeout = {timeout.ToPrettyString()}.");
+            log.Warn(
+                "Request timed out. Target = {Target}. Timeout = {Timeout}.",
+                request.Url.Authority,
+                timeout.ToPrettyString());
         }
 
         private void LogUnknownException(Exception error)
         {
-            log.Error(error, "Unknown error in sending request.");
+            log.Warn(error, "Unknown error in sending request.");
         }
 
         private void LogFailedToWaitForRequestAbort()
         {
-            log.Warn($"Timed out request was aborted but did not complete in {settings.RequestAbortTimeout.ToPrettyString()}.");
+            log.Warn(
+                "Timed out request was aborted but did not complete in {RequestAbortTimeout}.",
+                settings.RequestAbortTimeout.ToPrettyString());
         }
     }
 }
