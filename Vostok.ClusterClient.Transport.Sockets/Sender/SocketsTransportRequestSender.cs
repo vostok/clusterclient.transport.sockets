@@ -95,8 +95,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
             }
             catch (HttpRequestException e) when (IsConnectionFailure(e, cancellationToken))
             {
-                var message = "Connection failure. Target = {Target}.";
-                log.Warn(e, message, request.Url.Authority);
+                log.Warn(e, "Connection failure. Target = {Target}.", request.Url.Authority);
                 return Responses.ConnectFailure;
             }
 
