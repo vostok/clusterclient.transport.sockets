@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using FluentAssertions;
 using FluentAssertions.Extensions;
 using NSubstitute;
@@ -20,6 +21,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
         private SocketsTransport transport;
         private IHttpClientProvider clientProvider;
         private ILog log;
+        private TimeSpan timeout;
 
         private Request request;
 
@@ -32,6 +34,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
             clientProvider = Substitute.For<IHttpClientProvider>();
             transport = new SocketsTransport(settings, log, sender, clientProvider);
             request = Request.Post("http://localhost/");
+            timeout = 10.Seconds();
         }
 
         [TearDown]
@@ -53,7 +56,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
                 cts.Cancel();
                 
                 transport
-                    .SendAsync(request, null, 1.Seconds(), cts.Token)
+                    .SendAsync(request, null, timeout, cts.Token)
                     .GetAwaiter()
                     .GetResult()
                     .Code
@@ -74,19 +77,49 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
                 .Be(ResponseCode.RequestTimeout);
 
         [Test]
-        public void Should_pass_connection_timeout_to_client_provider()
+        public async Task Should_pass_connection_timeout_to_client_provider()
         {
             var connectionTimeout = 6.Seconds();
-            transport.SendAsync(request, connectionTimeout, 10.Seconds(), CancellationToken.None);
+            await transport.SendAsync(request, connectionTimeout, timeout, CancellationToken.None);
             clientProvider.Received(1).GetClient(connectionTimeout);
         }
         
         [Test]
-        public void Should_pass_null_connection_timeout_to_client_provider()
+        public async Task Should_pass_null_connection_timeout_to_client_provider()
         {
             TimeSpan? connectionTimeout = null;
-            transport.SendAsync(request, connectionTimeout, 10.Seconds(), CancellationToken.None);
+            await transport.SendAsync(request, connectionTimeout, timeout, CancellationToken.None);
             clientProvider.Received(1).GetClient(connectionTimeout);
+        }
+
+        [Test]
+        public async Task Should_use_client_from_clientProvider_for_request_sending()
+        {
+            var client = new HttpClient();
+            clientProvider.GetClient(null).ReturnsForAnyArgs(client);
+
+            await transport.SendAsync(request, null, timeout, CancellationToken.None);
+
+            sender.Received(1).SendAsync(client, request, Arg.Any<CancellationToken>());
+        }
+
+        [Test]
+        public async Task Should_cancel_request_on_timeout()
+        {
+            CancellationToken token;
+            sender.SendAsync(null, null, default)
+                .ReturnsForAnyArgs(Task.Run(
+                    async () =>
+                    {
+                        await Task.Yield();
+                        await Task.Delay(-1);
+                        return Responses.Ok;
+                    }))
+                .AndDoes(x => token = x.Arg<CancellationToken>());
+            
+            await transport.SendAsync(request, null, 2.Milliseconds(), CancellationToken.None);
+
+            token.IsCancellationRequested.Should().BeTrue();
         }
     }
 }
