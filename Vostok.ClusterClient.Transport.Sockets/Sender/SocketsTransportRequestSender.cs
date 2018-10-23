@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Transport.Sockets.ArpCache;
+using Vostok.Clusterclient.Transport.Sockets.Hacks;
 using Vostok.Clusterclient.Transport.Sockets.Messages;
 using Vostok.Clusterclient.Transport.Sockets.ResponseReading;
 using Vostok.Logging.Abstractions;
@@ -17,20 +18,20 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
         private readonly SocketsTransportSettings settings;
         private readonly IHttpRequestMessageFactory requestFactory;
         private readonly IResponseReader responseReader;
-        private readonly IKeepAliveTuner keepAliveTuner;
+        private readonly ISocketTuner socketTuner;
         private readonly ILog log;
 
         public SocketsTransportRequestSender(
             SocketsTransportSettings settings,
             IHttpRequestMessageFactory requestFactory,
             IResponseReader responseReader,
-            IKeepAliveTuner keepAliveTuner,
+            ISocketTuner socketTuner,
             ILog log)
         {
             this.settings = settings;
             this.requestFactory = requestFactory;
             this.responseReader = responseReader;
-            this.keepAliveTuner = keepAliveTuner;
+            this.socketTuner = socketTuner;
             this.log = log;
         }
 
@@ -57,7 +58,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
                 return Responses.UnknownFailure;
             }
         }
-
 
         private static bool IsConnectionFailure(HttpRequestException e, CancellationToken cancellationToken)
             => e.InnerException is SocketException se && IsConnectionFailure(se.SocketErrorCode) ||
@@ -98,19 +98,11 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
                 log.Warn(e, "Connection failure. Target = {Target}.", request.Url.Authority);
                 return Responses.ConnectFailure;
             }
+                        
+            if (sendContext.Response != null)
+                return sendContext.Response;
 
-            var socket = sendContext.Socket;
-            if (socket != null)
-            {
-                if (sendContext.Response != null)
-                    return sendContext.Response;
-
-                if (settings.TcpKeepAliveEnabled)
-                    keepAliveTuner.Tune(socket);
-
-                if (settings.ArpCacheWarmupEnabled && socket.RemoteEndPoint is IPEndPoint ipEndPoint)
-                    ArpCacheMaintainer.ReportAddress(ipEndPoint.Address);
-            }
+            socketTuner.Tune(sendContext.Socket);
 
             if (sendContext.Response != null)
                 return sendContext.Response;

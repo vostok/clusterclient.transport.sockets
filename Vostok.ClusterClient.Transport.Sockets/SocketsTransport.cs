@@ -7,6 +7,7 @@ using JetBrains.Annotations;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Core.Transport;
 using Vostok.Clusterclient.Transport.Sockets.ClientProvider;
+using Vostok.Clusterclient.Transport.Sockets.Hacks;
 using Vostok.Clusterclient.Transport.Sockets.Messages;
 using Vostok.Clusterclient.Transport.Sockets.Pool;
 using Vostok.Clusterclient.Transport.Sockets.ResponseReading;
@@ -118,7 +119,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
 
             var requestFactory = new HttpRequestMessageFactory(pool, log);
             var responseReader = new ResponseReader(settings, pool, log);
-            var keepAliveTuner = new KeepAliveTuner(settings);
+            var keepAliveTuner = new SocketTuner(settings, log);
 
             return new SocketsTransportRequestSender(settings, requestFactory, responseReader, keepAliveTuner, log);
         }
