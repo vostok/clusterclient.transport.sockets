@@ -225,8 +225,6 @@ namespace Vostok.Clusterclient.Transport.Sockets
                     ArpCacheMaintainer.ReportAddress(ipEndPoint.Address);
             }
 
-
-
             if (sendContext.Response != null)
                 return sendContext.Response;
 

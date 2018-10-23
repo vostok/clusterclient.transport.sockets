@@ -1,7 +1,9 @@
 using System;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
 using Vostok.Clusterclient.Core.Model;
@@ -124,5 +126,42 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
             result.Stream.Should().BeNull();
             result.ErrorCode.Should().Be(ResponseCode.ReceiveFailure);
         }
+        
+        [Test]        
+        public void Should_not_dispose_underlying_response_content()
+        {
+            var content = new TestHttpContent();
+            
+            var response = new HttpResponseMessage
+            {
+                Content = content
+            };
+
+            settings.UseResponseStreaming = _ => true;
+            
+            reader.ReadResponseBodyAsync(response, CancellationToken.None).GetAwaiter().GetResult();
+
+            content.IsDisposed.Should().BeFalse();
+        }
+
+        private class TestHttpContent : HttpContent
+        {
+            public bool IsDisposed;
+            
+            protected override Task SerializeToStreamAsync(Stream stream, TransportContext context)=> Task.CompletedTask;
+
+            protected override bool TryComputeLength(out long length)
+            {
+                length = 0;
+                return true;
+            }
+
+            protected override void Dispose(bool disposing)
+            {
+                IsDisposed = true;
+                base.Dispose(disposing);
+            }
+        }
+
     }
 }
