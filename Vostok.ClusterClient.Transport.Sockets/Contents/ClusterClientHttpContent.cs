@@ -10,9 +10,9 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
 {
     internal abstract class ClusterClientHttpContent : HttpContent
     {
-        private readonly Request request;
         protected readonly SendContext SendContext;
         protected readonly ILog Log;
+        private readonly Request request;
 
         protected ClusterClientHttpContent(Request request, SendContext sendContext, ILog log)
         {

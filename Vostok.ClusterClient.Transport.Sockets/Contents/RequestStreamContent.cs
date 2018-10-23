@@ -71,7 +71,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
                     bytesSent += bytesRead;
                 }
             }
-      
         }
 
         protected override bool TryComputeLength(out long length)

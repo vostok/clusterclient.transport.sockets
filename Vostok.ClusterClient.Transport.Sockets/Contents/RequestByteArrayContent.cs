@@ -26,7 +26,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
             content = request.Content ?? throw new ArgumentNullException(nameof(request.Content), "Bug in code: content is null.");
             this.pool = pool;
             this.cancellationToken = cancellationToken;
-            
+
             Headers.ContentLength = content.Length;
         }
 
