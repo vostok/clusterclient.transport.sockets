@@ -47,7 +47,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
             {
                 throw;
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 return Responses.Canceled;
             }
