@@ -26,7 +26,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
             SendContext.Socket = SocketAccessor.GetSocket(stream, Log);
             try
             {
-                await SerializeAsync(stream, context);
+                await SerializeAsync(stream, context).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
