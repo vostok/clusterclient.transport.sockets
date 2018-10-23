@@ -39,7 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\vostok.commons.collections\Vostok.Commons.Collections\UnboundedObjectPool.cs" Link="Collections\UnboundedObjectPool.cs" />
+    <Compile Include="..\..\vostok.commons.collections\Vostok.Commons.Collections\UnboundedObjectPool.cs" Link="Commons\UnboundedObjectPool.cs" />
     <Compile Include="..\..\vostok.commons.time\Vostok.Commons.Time\TimeSpanFormatting.cs" Link="Commons\TimeSpanFormatting.cs" />
   </ItemGroup>
 
