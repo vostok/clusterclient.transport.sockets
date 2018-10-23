@@ -1,12 +1,14 @@
 using System;
 using System.Net;
 using System.Net.Http;
+using JetBrains.Annotations;
 
 namespace Vostok.Clusterclient.Transport.Sockets
 {
     /// <summary>
     /// A class that represents <see cref="SocketsTransport"/> settings.
     /// </summary>
+    [PublicAPI]
     public class SocketsTransportSettings
     {
         /// <summary>

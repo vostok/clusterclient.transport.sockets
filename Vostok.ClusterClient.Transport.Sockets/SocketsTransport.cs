@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Core.Transport;
 using Vostok.Clusterclient.Transport.Sockets.ArpCache;
@@ -19,6 +20,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
     ///     <para>ClusterClient HTTP transport for .NET Core 2.1 and later.</para>
     ///     <para>Internally uses <see cref="SocketsHttpHandler" />.</para>
     /// </summary>
+    [PublicAPI]
     public class SocketsTransport : ITransport, IDisposable
     {
         private readonly SocketsTransportSettings settings;
@@ -222,6 +224,8 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 if (settings.ArpCacheWarmupEnabled && socket.RemoteEndPoint is IPEndPoint ipEndPoint)
                     ArpCacheMaintainer.ReportAddress(ipEndPoint.Address);
             }
+
+
 
             if (sendContext.Response != null)
                 return sendContext.Response;

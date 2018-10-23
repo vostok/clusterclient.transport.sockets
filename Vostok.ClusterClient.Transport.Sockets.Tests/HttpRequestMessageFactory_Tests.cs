@@ -10,7 +10,7 @@ using Vostok.Logging.Console;
 
 namespace Vostok.Clusterclient.Transport.Sockets.Tests
 {
-    public class HttpRequestMessageFactory_Tests
+    internal class HttpRequestMessageFactory_Tests
     {
         private readonly HttpRequestMessageFactory factory = new HttpRequestMessageFactory(
             new Pool<byte[]>(() => new byte[1000]),

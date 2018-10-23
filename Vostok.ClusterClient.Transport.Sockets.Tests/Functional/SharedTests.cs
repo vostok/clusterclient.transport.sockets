@@ -5,7 +5,7 @@ using Vostok.Logging.Console;
 
 namespace Vostok.Clusterclient.Transport.Sockets.Tests.Functional
 {
-    public class Config : ITransportTestConfig
+    internal class Config : ITransportTestConfig
     {
         public ILog CreateLog() => new ConsoleLog();
 
