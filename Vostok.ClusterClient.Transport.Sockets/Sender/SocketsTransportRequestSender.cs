@@ -34,6 +34,8 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
 
         public async Task<Response> SendAsync(HttpClient client, Request request, CancellationToken cancellationToken)
         {
+            await Task.Yield();
+
             try
             {
                 using (var state = new RequestDisposableState())
