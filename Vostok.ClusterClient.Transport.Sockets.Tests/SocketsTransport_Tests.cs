@@ -6,6 +6,7 @@ using NSubstitute;
 using NUnit.Framework;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Core.Transport;
+using Vostok.Clusterclient.Transport.Sockets.ClientProvider;
 using Vostok.Clusterclient.Transport.Sockets.Sender;
 using Vostok.Logging.Abstractions;
 using Vostok.Logging.Console;
@@ -17,6 +18,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
         private ISocketsTransportRequestSender sender;
         private SocketsTransportSettings settings;
         private SocketsTransport transport;
+        private IHttpClientProvider clientProvider;
         private ILog log;
 
         private Request request;
@@ -27,7 +29,8 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
             sender = Substitute.For<ISocketsTransportRequestSender>();
             log = new ConsoleLog();
             settings = new SocketsTransportSettings();
-            transport = new SocketsTransport(settings, log, sender);
+            clientProvider = Substitute.For<IHttpClientProvider>();
+            transport = new SocketsTransport(settings, log, sender, clientProvider);
             request = Request.Post("http://localhost/");
         }
 
@@ -64,18 +67,26 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
         [TestCase(0.99)]
         public void Should_return_Timeout_when_provided_timeout_is_too_small(double timeoutMs)
             => transport
-                .SendAsync(request, null, TimeSpan.FromMilliseconds(timeoutMs), CancellationToken.None)
+                .SendAsync(request, null, TimeSpan.FromTicks((long)(timeoutMs * 10000)), CancellationToken.None)
                 .GetAwaiter().GetResult()
                 .Code
                 .Should()
                 .Be(ResponseCode.RequestTimeout);
 
         [Test]
-        public void Should_pass_connection_timeout_to_sender()
+        public void Should_pass_connection_timeout_to_client_provider()
         {
             var connectionTimeout = 6.Seconds();
             transport.SendAsync(request, connectionTimeout, 10.Seconds(), CancellationToken.None);
-            sender.Received(1).SendAsync(Arg.Any<Request>(), connectionTimeout, Arg.Any<CancellationToken>());
+            clientProvider.Received(1).GetClient(connectionTimeout);
+        }
+        
+        [Test]
+        public void Should_pass_null_connection_timeout_to_client_provider()
+        {
+            TimeSpan? connectionTimeout = null;
+            transport.SendAsync(request, connectionTimeout, 10.Seconds(), CancellationToken.None);
+            clientProvider.Received(1).GetClient(connectionTimeout);
         }
     }
 }

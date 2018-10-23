@@ -1,12 +1,13 @@
 using System;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Vostok.Clusterclient.Core.Model;
 
 namespace Vostok.Clusterclient.Transport.Sockets.Sender
 {
-    internal interface ISocketsTransportRequestSender : IDisposable
+    internal interface ISocketsTransportRequestSender
     {
-        Task<Response> SendAsync(Request request, TimeSpan connectionTimeout, CancellationToken cancellationToken);
+        Task<Response> SendAsync(HttpClient client, Request request, CancellationToken cancellationToken);
     }
 }

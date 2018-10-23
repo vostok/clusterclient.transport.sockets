@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Concurrent;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Core.Transport;
+using Vostok.Clusterclient.Transport.Sockets.ClientProvider;
 using Vostok.Clusterclient.Transport.Sockets.Pool;
 using Vostok.Clusterclient.Transport.Sockets.Sender;
 using Vostok.Commons.Time;
@@ -22,6 +24,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
         private readonly SocketsTransportSettings settings;
         private readonly ILog log;
         private readonly ISocketsTransportRequestSender sender;
+        private readonly IHttpClientProvider clientProvider;
 
         /// <summary>
         ///     Creates ClusterClient transport for .NET Core 2.1 and later based on <see cref="SocketsHttpHandler" />
@@ -29,16 +32,17 @@ namespace Vostok.Clusterclient.Transport.Sockets
         /// <param name="settings"></param>
         /// <param name="log"></param>
         public SocketsTransport(SocketsTransportSettings settings, ILog log)
-            : this(settings.Clone(), log, null)
+            : this(settings.Clone(), log, null, null)
         {
         }
 
-        internal SocketsTransport(SocketsTransportSettings settings, ILog log, ISocketsTransportRequestSender sender)
+        internal SocketsTransport(SocketsTransportSettings settings, ILog log, ISocketsTransportRequestSender sender, IHttpClientProvider clientProvider)
         {
             this.settings = settings;
             this.log = log;
 
             this.sender = sender ?? CreateSender(settings, log);
+            this.clientProvider = clientProvider ?? new HttpClientProvider(this.settings);
         }
 
         /// <inheritdoc />
@@ -59,8 +63,9 @@ namespace Vostok.Clusterclient.Transport.Sockets
             using (var timeoutCancellation = new CancellationTokenSource())
             using (var requestCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
             {
+                var client = clientProvider.GetClient(connectionTimeout);
                 var timeoutTask = Task.Delay(timeout, timeoutCancellation.Token);
-                var senderTask = sender.SendAsync(request, connectionTimeout ?? Timeout.InfiniteTimeSpan, requestCancellation.Token);
+                var senderTask = sender.SendAsync(client, request, requestCancellation.Token);
                 var completedTask = await Task.WhenAny(timeoutTask, senderTask).ConfigureAwait(false);
                 if (completedTask is Task<Response> taskWithResponse)
                 {
@@ -99,7 +104,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
 
         /// <inheritdoc />
         public void Dispose()
-            => sender.Dispose();
+            => clientProvider.Dispose();
 
         private static SocketsTransportRequestSender CreateSender(SocketsTransportSettings settings, ILog log)
         {

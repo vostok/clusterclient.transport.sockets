@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Vostok.Clusterclient.Core.Model;
@@ -20,8 +18,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
         private readonly byte[] keepAliveValues;
         private readonly ILog log;
 
-        private readonly ConcurrentDictionary<TimeSpan, Lazy<HttpClient>> clients;
-
         public SocketsTransportRequestSender(
             SocketsTransportSettings settings,
             HttpRequestMessageFactory requestFactory,
@@ -34,16 +30,14 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
             this.responseReader = responseReader;
             this.keepAliveValues = keepAliveValues;
             this.log = log;
-
-            clients = new ConcurrentDictionary<TimeSpan, Lazy<HttpClient>>();
         }
 
-        public async Task<Response> SendAsync(Request request, TimeSpan connectionTimeout, CancellationToken cancellationToken)
+        public async Task<Response> SendAsync(HttpClient client, Request request, CancellationToken cancellationToken)
         {
             try
             {
                 using (var state = new RequestDisposableState())
-                    return await SendInternalAsync(state, request, connectionTimeout, cancellationToken).ConfigureAwait(false);
+                    return await SendInternalAsync(client, state, request, cancellationToken).ConfigureAwait(false);
             }
             catch (StreamAlreadyUsedException)
             {
@@ -60,16 +54,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
             }
         }
 
-        public void Dispose()
-        {
-            foreach (var kvp in clients)
-            {
-                var client = kvp.Value.Value;
-
-                client.CancelPendingRequests();
-                client.Dispose();
-            }
-        }
 
         private static bool IsConnectionFailure(HttpRequestException e, CancellationToken cancellationToken)
             => e.InnerException is SocketException se && IsConnectionFailure(se.SocketErrorCode) ||
@@ -95,11 +79,9 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
             }
         }
 
-        private async Task<Response> SendInternalAsync(RequestDisposableState state, Request request, TimeSpan connectionTimeout, CancellationToken cancellationToken)
+        private async Task<Response> SendInternalAsync(HttpClient client, RequestDisposableState state, Request request, CancellationToken cancellationToken)
         {
             state.RequestMessage = requestFactory.Create(request, cancellationToken, out var sendContext);
-
-            var client = clients.GetOrAdd(connectionTimeout, t => new Lazy<HttpClient>(() => CreateClient(t))).Value;
 
             try
             {
@@ -148,35 +130,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
             state.PreventNextDispose();
             return new Response(responseCode, null, headers, new ResponseStream(responseReadResult.Stream, state));
         }
-
-        private HttpClient CreateClient(TimeSpan connectionTimeout)
-        {
-            var handler = new SocketsHttpHandler
-            {
-                Proxy = settings.Proxy,
-                ConnectTimeout = connectionTimeout,
-                UseProxy = settings.Proxy != null,
-                AllowAutoRedirect = settings.AllowAutoRedirect,
-                PooledConnectionIdleTimeout = settings.ConnectionIdleTimeout,
-                PooledConnectionLifetime = settings.ConnectionLifetime,
-                MaxConnectionsPerServer = settings.MaxConnectionsPerEndpoint,
-                AutomaticDecompression = DecompressionMethods.None,
-                UseCookies = false,
-                SslOptions =
-                {
-                    CertificateRevocationCheckMode = X509RevocationMode.NoCheck,
-                    RemoteCertificateValidationCallback = (_, __, ___, ____) => true
-                }
-            };
-
-            if (settings.MaxResponseDrainSize.HasValue)
-                handler.MaxResponseDrainSize = settings.MaxResponseDrainSize.Value;
-
-            settings.Tune?.Invoke(handler);
-
-            return new HttpClient(handler, true);
-        }
-
         private void LogUnknownException(Exception error)
         {
             log.Warn(error, "Unknown error in sending request.");
