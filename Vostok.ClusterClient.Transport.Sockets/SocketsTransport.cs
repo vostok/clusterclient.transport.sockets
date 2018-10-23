@@ -84,6 +84,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 LogRequestTimeout(request, timeout);
 
                 // wait for cancellation & dispose resources associated with Response object
+                // ReSharper disable once MethodSupportsCancellation
                 var senderTaskContinuation = senderTask.ContinueWith(
                     t =>
                     {
