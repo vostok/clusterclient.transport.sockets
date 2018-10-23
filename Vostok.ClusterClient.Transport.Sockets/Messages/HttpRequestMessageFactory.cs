@@ -5,9 +5,9 @@ using Vostok.Clusterclient.Transport.Sockets.Contents;
 using Vostok.Clusterclient.Transport.Sockets.Pool;
 using Vostok.Logging.Abstractions;
 
-namespace Vostok.Clusterclient.Transport.Sockets
+namespace Vostok.Clusterclient.Transport.Sockets.Messages
 {
-    internal class HttpRequestMessageFactory
+    internal class HttpRequestMessageFactory : IHttpRequestMessageFactory
     {
         private readonly IPool<byte[]> pool;
         private readonly ILog log;

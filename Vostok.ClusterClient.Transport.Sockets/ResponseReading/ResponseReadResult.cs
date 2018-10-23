@@ -1,7 +1,7 @@
 using System.IO;
 using Vostok.Clusterclient.Core.Model;
 
-namespace Vostok.Clusterclient.Transport.Sockets
+namespace Vostok.Clusterclient.Transport.Sockets.ResponseReading
 {
     internal readonly struct ResponseReadResult
     {

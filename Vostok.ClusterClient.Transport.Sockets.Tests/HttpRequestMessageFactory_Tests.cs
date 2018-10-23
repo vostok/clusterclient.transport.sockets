@@ -5,6 +5,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Transport.Sockets.Contents;
+using Vostok.Clusterclient.Transport.Sockets.Messages;
 using Vostok.Clusterclient.Transport.Sockets.Pool;
 using Vostok.Logging.Console;
 

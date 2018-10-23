@@ -3,9 +3,24 @@ using System.Runtime.InteropServices;
 
 namespace Vostok.Clusterclient.Transport.Sockets
 {
-    internal static class KeepAliveTuner
+    internal class KeepAliveTuner : IKeepAliveTuner
     {
-        public static byte[] GetKeepAliveValues(SocketsTransportSettings settings)
+        private readonly byte[] keepAliveValues;
+
+        public KeepAliveTuner(SocketsTransportSettings settings)
+            => keepAliveValues = GetKeepAliveValues(settings);
+
+        public void Tune(Socket socket)
+        {
+            if (socket == null)
+                return;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                socket.IOControl(IOControlCode.KeepAliveValues, keepAliveValues, null);
+            }
+        }
+
+        private static byte[] GetKeepAliveValues(SocketsTransportSettings settings)
         {
             if (!settings.TcpKeepAliveEnabled || !RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return null;
@@ -28,16 +43,6 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 (byte) ((tcpKeepAliveInterval >> 16) & byte.MaxValue),
                 (byte) ((tcpKeepAliveInterval >> 24) & byte.MaxValue)
             };
-        }
-
-        public static void Tune(Socket socket, SocketsTransportSettings settings, byte[] keepAliveValues)
-        {
-            if (socket == null)
-                return;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                socket.IOControl(IOControlCode.KeepAliveValues, keepAliveValues, null);
-            }
         }
     }
 }

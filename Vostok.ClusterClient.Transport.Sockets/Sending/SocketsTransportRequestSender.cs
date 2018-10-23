@@ -6,6 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Transport.Sockets.ArpCache;
+using Vostok.Clusterclient.Transport.Sockets.Messages;
+using Vostok.Clusterclient.Transport.Sockets.ResponseReading;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.Clusterclient.Transport.Sockets.Sender
@@ -13,22 +15,22 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
     internal class SocketsTransportRequestSender : ISocketsTransportRequestSender
     {
         private readonly SocketsTransportSettings settings;
-        private readonly HttpRequestMessageFactory requestFactory;
-        private readonly ResponseReader responseReader;
-        private readonly byte[] keepAliveValues;
+        private readonly IHttpRequestMessageFactory requestFactory;
+        private readonly IResponseReader responseReader;
+        private readonly IKeepAliveTuner keepAliveTuner;
         private readonly ILog log;
 
         public SocketsTransportRequestSender(
             SocketsTransportSettings settings,
-            HttpRequestMessageFactory requestFactory,
-            ResponseReader responseReader,
-            byte[] keepAliveValues,
+            IHttpRequestMessageFactory requestFactory,
+            IResponseReader responseReader,
+            IKeepAliveTuner keepAliveTuner,
             ILog log)
         {
             this.settings = settings;
             this.requestFactory = requestFactory;
             this.responseReader = responseReader;
-            this.keepAliveValues = keepAliveValues;
+            this.keepAliveTuner = keepAliveTuner;
             this.log = log;
         }
 
@@ -105,7 +107,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
                     return sendContext.Response;
 
                 if (settings.TcpKeepAliveEnabled)
-                    KeepAliveTuner.Tune(socket, settings, keepAliveValues);
+                    keepAliveTuner.Tune(socket);
 
                 if (settings.ArpCacheWarmupEnabled && socket.RemoteEndPoint is IPEndPoint ipEndPoint)
                     ArpCacheMaintainer.ReportAddress(ipEndPoint.Address);

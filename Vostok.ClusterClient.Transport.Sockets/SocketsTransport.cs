@@ -7,7 +7,9 @@ using JetBrains.Annotations;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Core.Transport;
 using Vostok.Clusterclient.Transport.Sockets.ClientProvider;
+using Vostok.Clusterclient.Transport.Sockets.Messages;
 using Vostok.Clusterclient.Transport.Sockets.Pool;
+using Vostok.Clusterclient.Transport.Sockets.ResponseReading;
 using Vostok.Clusterclient.Transport.Sockets.Sender;
 using Vostok.Commons.Time;
 using Vostok.Logging.Abstractions;
@@ -36,7 +38,11 @@ namespace Vostok.Clusterclient.Transport.Sockets
         {
         }
 
-        internal SocketsTransport(SocketsTransportSettings settings, ILog log, ISocketsTransportRequestSender sender, IHttpClientProvider clientProvider)
+        internal SocketsTransport(
+            SocketsTransportSettings settings,
+            ILog log,
+            ISocketsTransportRequestSender sender,
+            IHttpClientProvider clientProvider)
         {
             this.settings = settings;
             this.log = log;
@@ -112,10 +118,9 @@ namespace Vostok.Clusterclient.Transport.Sockets
 
             var requestFactory = new HttpRequestMessageFactory(pool, log);
             var responseReader = new ResponseReader(settings, pool, log);
+            var keepAliveTuner = new KeepAliveTuner(settings);
 
-            var keepAliveValues = KeepAliveTuner.GetKeepAliveValues(settings);
-
-            return new SocketsTransportRequestSender(settings, requestFactory, responseReader, keepAliveValues, log);
+            return new SocketsTransportRequestSender(settings, requestFactory, responseReader, keepAliveTuner, log);
         }
 
         private void LogRequestTimeout(Request request, TimeSpan timeout)

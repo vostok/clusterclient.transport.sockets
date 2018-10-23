@@ -7,9 +7,9 @@ using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Transport.Sockets.Pool;
 using Vostok.Logging.Abstractions;
 
-namespace Vostok.Clusterclient.Transport.Sockets
+namespace Vostok.Clusterclient.Transport.Sockets.ResponseReading
 {
-    internal class ResponseReader
+    internal class ResponseReader : IResponseReader
     {
         private readonly IPool<byte[]> pool;
         private readonly ILog log;

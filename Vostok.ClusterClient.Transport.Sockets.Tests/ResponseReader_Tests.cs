@@ -8,6 +8,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Transport.Sockets.Pool;
+using Vostok.Clusterclient.Transport.Sockets.ResponseReading;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.Clusterclient.Transport.Sockets.Tests
