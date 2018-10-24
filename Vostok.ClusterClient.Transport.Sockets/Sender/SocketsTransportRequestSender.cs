@@ -34,7 +34,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
         public async Task<Response> SendAsync(IHttpClient client, Request request, CancellationToken cancellationToken)
         {
             // TODO: await Task.Yield(); (configure-await-false check fails there on CI
-            await Task.Delay(0);
+            await Task.Delay(0).ConfigureAwait(false);
 
             try
             {
