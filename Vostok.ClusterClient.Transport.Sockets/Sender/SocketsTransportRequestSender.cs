@@ -14,20 +14,17 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
 {
     internal class SocketsTransportRequestSender : ISocketsTransportRequestSender
     {
-        private readonly SocketsTransportSettings settings;
         private readonly IHttpRequestMessageFactory requestFactory;
         private readonly IResponseReader responseReader;
         private readonly ISocketTuner socketTuner;
         private readonly ILog log;
 
         public SocketsTransportRequestSender(
-            SocketsTransportSettings settings,
             IHttpRequestMessageFactory requestFactory,
             IResponseReader responseReader,
             ISocketTuner socketTuner,
             ILog log)
         {
-            this.settings = settings;
             this.requestFactory = requestFactory;
             this.responseReader = responseReader;
             this.socketTuner = socketTuner;

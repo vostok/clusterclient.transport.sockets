@@ -20,7 +20,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
 {
     public class SocketsTransportRequestSender_Tests
     {
-        private SocketsTransportSettings settings;
         private IHttpRequestMessageFactory requestFactory;
         private IResponseReader responseReader;
         private SocketsTransportRequestSender sender;
@@ -32,7 +31,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
         [SetUp]
         public void Setup()
         {
-            settings = new SocketsTransportSettings();
             requestFactory = Substitute.For<IHttpRequestMessageFactory>();
             responseReader = Substitute.For<IResponseReader>();
             socketTuner = Substitute.For<ISocketTuner>();
@@ -40,7 +38,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
             log = new ConsoleLog();
             request = Request.Post("http://localhost/");
             
-            sender = new SocketsTransportRequestSender(settings, requestFactory, responseReader, socketTuner, log);
+            sender = new SocketsTransportRequestSender(requestFactory, responseReader, socketTuner, log);
         }
 
         [TearDown]

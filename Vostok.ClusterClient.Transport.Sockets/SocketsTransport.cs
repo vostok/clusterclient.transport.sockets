@@ -118,9 +118,9 @@ namespace Vostok.Clusterclient.Transport.Sockets
 
             var requestFactory = new HttpRequestMessageFactory(pool, log);
             var responseReader = new ResponseReader(settings, pool, log);
-            var keepAliveTuner = new SocketTuner(settings, log);
+            var socketTuner = new SocketTuner(settings, log);
 
-            return new SocketsTransportRequestSender(settings, requestFactory, responseReader, keepAliveTuner, log);
+            return new SocketsTransportRequestSender(requestFactory, responseReader, socketTuner, log);
         }
 
         private void LogRequestTimeout(Request request, TimeSpan timeout)
