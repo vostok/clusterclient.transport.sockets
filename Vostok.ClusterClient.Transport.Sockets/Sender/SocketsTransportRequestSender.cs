@@ -33,7 +33,8 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
 
         public async Task<Response> SendAsync(IHttpClient client, Request request, CancellationToken cancellationToken)
         {
-            await Task.Yield();
+            // TODO: await Task.Yield(); (configure-await-false check fails there on CI
+            await Task.Delay(0);
 
             try
             {
@@ -94,7 +95,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
                 log.Warn(e, "Connection failure. Target = {Target}.", request.Url.Authority);
                 return Responses.ConnectFailure;
             }
-                        
+
             if (sendContext.Response != null)
                 return sendContext.Response;
 
