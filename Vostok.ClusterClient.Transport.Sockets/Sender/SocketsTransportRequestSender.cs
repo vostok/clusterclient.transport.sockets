@@ -101,9 +101,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
 
             socketTuner.Tune(sendContext.Socket);
 
-            if (sendContext.Response != null)
-                return sendContext.Response;
-
             var responseCode = (ResponseCode) (int) state.ResponseMessage.StatusCode;
 
             var headers = HeadersConverter.Create(state.ResponseMessage);
