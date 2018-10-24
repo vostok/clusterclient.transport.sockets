@@ -38,9 +38,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
             timeout = 10.Seconds();
         }
 
-        [TearDown]
-        public void Teardown() => ConsoleLog.Flush();
-
         [Test]
         public void Should_support_request_streaming()
             => transport.Supports(TransportCapabilities.RequestStreaming).Should().BeTrue();

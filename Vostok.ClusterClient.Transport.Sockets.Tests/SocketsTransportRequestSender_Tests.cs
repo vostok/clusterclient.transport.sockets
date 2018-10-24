@@ -43,9 +43,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
             requestFactory.WhenForAnyArgs(x => x.Create(null, default, out _)).Do(x => x[2] = new SendContext());
         }
 
-        [TearDown]
-        public void Teardown() => ConsoleLog.Flush();
-        
         [Test]
         public async Task Should_handle_errors()
         {
@@ -193,7 +190,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
                     .SendAsync(null, default, default)
                     .ReturnsForAnyArgs(responseMessage);
 
-                await sender.SendAsync(client, request, token);
+                await sender.SendAsync(client, request, token); 
 
                 responseReader.Received(1).ReadResponseBodyAsync(responseMessage, token);
             }
