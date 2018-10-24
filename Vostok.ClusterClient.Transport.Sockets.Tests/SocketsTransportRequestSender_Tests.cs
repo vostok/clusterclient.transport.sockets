@@ -138,5 +138,28 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
             
             result.Code.Should().Be(code);
         }
+        
+        [Test]
+        public async Task Should_tune_socket()
+        {
+            var sendContext = new SendContext();
+            var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            
+            requestFactory.Create(null, default, out _)
+                .ReturnsForAnyArgs(
+                    x =>
+                    {
+                        x[2] = sendContext;
+                        return null;
+                    });
+            
+            client
+                .WhenForAnyArgs(x => x.SendAsync(null, default, default))
+                .Do(_ => sendContext.Socket = socket);
+
+            await sender.SendAsync(client, request, default);
+            
+            socketTuner.Received(1).Tune(socket);
+        }
     }
 }
