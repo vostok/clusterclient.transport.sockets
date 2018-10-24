@@ -39,6 +39,8 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
             request = Request.Post("http://localhost/");
             
             sender = new SocketsTransportRequestSender(requestFactory, responseReader, socketTuner, log);
+            
+            requestFactory.WhenForAnyArgs(x => x.Create(null, default, out _)).Do(x => x[2] = new SendContext());
         }
 
         [TearDown]
@@ -160,6 +162,41 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
             await sender.SendAsync(client, request, default);
             
             socketTuner.Received(1).Tune(socket);
+        }
+
+        [Test]
+        public async Task Should_call_client_with_correct_parameters()
+        {
+            using (var cts = new CancellationTokenSource())
+            {
+                var requestMessage = new HttpRequestMessage();
+                var token = cts.Token;
+                
+                requestFactory.Create(null, default, out _)
+                    .ReturnsForAnyArgs(requestMessage);
+
+                await sender.SendAsync(client, request, token);
+
+                client.Received(1).SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, token);
+            }
+        }
+
+        [Test]
+        public async Task Should_call_response_reader_with_correct_parameters()
+        {
+            using (var cts = new CancellationTokenSource())
+            {
+                var responseMessage = new HttpResponseMessage();
+                var token = cts.Token;
+
+                client
+                    .SendAsync(null, default, default)
+                    .ReturnsForAnyArgs(responseMessage);
+
+                await sender.SendAsync(client, request, token);
+
+                responseReader.Received(1).ReadResponseBodyAsync(responseMessage, token);
+            }
         }
     }
 }
