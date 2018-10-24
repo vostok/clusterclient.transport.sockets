@@ -1,10 +1,10 @@
 using System;
-using System.Net.Http;
+using Vostok.Clusterclient.Transport.Sockets.Client;
 
 namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
 {
     internal interface IHttpClientProvider : IDisposable
     {
-        HttpClient GetClient(TimeSpan? connectionTimeout);
+        IHttpClient GetClient(TimeSpan? connectionTimeout);
     }
 }

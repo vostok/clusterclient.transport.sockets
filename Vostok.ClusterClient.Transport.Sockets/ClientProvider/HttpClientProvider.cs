@@ -4,29 +4,30 @@ using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
+using Vostok.Clusterclient.Transport.Sockets.Client;
 
 namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
 {
     internal class HttpClientProvider : IHttpClientProvider
     {
         private readonly SocketsTransportSettings settings;
-        private ConcurrentDictionary<TimeSpan, Lazy<HttpClient>> clients;
+        private ConcurrentDictionary<TimeSpan, Lazy<IHttpClient>> clients;
 
         public HttpClientProvider(SocketsTransportSettings settings)
         {
             this.settings = settings;
-            clients = new ConcurrentDictionary<TimeSpan, Lazy<HttpClient>>();
+            clients = new ConcurrentDictionary<TimeSpan, Lazy<IHttpClient>>();
         }
 
-        public HttpClient GetClient(TimeSpan? connectionTimeout)
+        public IHttpClient GetClient(TimeSpan? connectionTimeout)
             => clients
                 .GetOrAdd(
                     connectionTimeout ?? Timeout.InfiniteTimeSpan,
-                    t => new Lazy<HttpClient>(() => CreateClient(t)))
+                    t => new Lazy<IHttpClient>(() => CreateClient(t)))
                 .Value;
         
 
-        private HttpClient CreateClient(TimeSpan connectionTimeout)
+        private IHttpClient CreateClient(TimeSpan connectionTimeout)
         {
             var handler = new SocketsHttpHandler
             {
@@ -51,7 +52,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
 
             settings.Tune?.Invoke(handler);
 
-            return new HttpClient(handler, true);
+            return new SystemNetHttpClient(handler, true);
         }
 
         public void Dispose()

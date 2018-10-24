@@ -1,11 +1,10 @@
 using System;
-using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Vostok.Clusterclient.Core.Model;
-using Vostok.Clusterclient.Transport.Sockets.ArpCache;
+using Vostok.Clusterclient.Transport.Sockets.Client;
 using Vostok.Clusterclient.Transport.Sockets.Hacks;
 using Vostok.Clusterclient.Transport.Sockets.Messages;
 using Vostok.Clusterclient.Transport.Sockets.ResponseReading;
@@ -35,7 +34,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
             this.log = log;
         }
 
-        public async Task<Response> SendAsync(HttpClient client, Request request, CancellationToken cancellationToken)
+        public async Task<Response> SendAsync(IHttpClient client, Request request, CancellationToken cancellationToken)
         {
             await Task.Yield();
 
@@ -83,7 +82,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
             }
         }
 
-        private async Task<Response> SendInternalAsync(HttpClient client, RequestDisposableState state, Request request, CancellationToken cancellationToken)
+        private async Task<Response> SendInternalAsync(IHttpClient client, RequestDisposableState state, Request request, CancellationToken cancellationToken)
         {
             state.RequestMessage = requestFactory.Create(request, cancellationToken, out var sendContext);
 

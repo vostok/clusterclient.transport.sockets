@@ -17,7 +17,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
             var timeout = TimeSpan.FromSeconds(seconds);
             var provider = new HttpClientProvider(new SocketsTransportSettings());
             var client = provider.GetClient(timeout);
-            var handler = (SocketsHttpHandler) GetHandler(client);
+            var handler = (SocketsHttpHandler) GetHandler((HttpClient) client);
             handler.ConnectTimeout.Should().Be(timeout);
         }
         
@@ -26,7 +26,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
         {
             var provider = new HttpClientProvider(new SocketsTransportSettings());
             var client = provider.GetClient(null);
-            var handler = (SocketsHttpHandler) GetHandler(client);
+            var handler = (SocketsHttpHandler) GetHandler((HttpClient) client);
             handler.ConnectTimeout.Should().Be(Timeout.InfiniteTimeSpan);
         }
         

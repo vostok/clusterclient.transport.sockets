@@ -1,5 +1,4 @@
 using System;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -8,6 +7,7 @@ using NSubstitute;
 using NUnit.Framework;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Core.Transport;
+using Vostok.Clusterclient.Transport.Sockets.Client;
 using Vostok.Clusterclient.Transport.Sockets.ClientProvider;
 using Vostok.Clusterclient.Transport.Sockets.Sender;
 using Vostok.Logging.Abstractions;
@@ -96,7 +96,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
         [Test]
         public async Task Should_use_client_from_clientProvider_for_request_sending()
         {
-            var client = new HttpClient();
+            var client = Substitute.For<IHttpClient>();
             clientProvider.GetClient(null).ReturnsForAnyArgs(client);
 
             await transport.SendAsync(request, null, timeout, CancellationToken.None);
