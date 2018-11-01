@@ -11,7 +11,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
     internal class HttpClientProvider : IHttpClientProvider
     {
         private readonly SocketsTransportSettings settings;
-        private ConcurrentDictionary<TimeSpan, Lazy<IHttpClient>> clients;
+        private readonly ConcurrentDictionary<TimeSpan, Lazy<IHttpClient>> clients;
 
         public HttpClientProvider(SocketsTransportSettings settings)
         {
@@ -25,7 +25,17 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
                     connectionTimeout ?? Timeout.InfiniteTimeSpan,
                     t => new Lazy<IHttpClient>(() => CreateClient(t)))
                 .Value;
-        
+
+        public void Dispose()
+        {
+            foreach (var kvp in clients)
+            {
+                var client = kvp.Value.Value;
+
+                client.CancelPendingRequests();
+                client.Dispose();
+            }
+        }
 
         private IHttpClient CreateClient(TimeSpan connectionTimeout)
         {
@@ -53,17 +63,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
             settings.Tune?.Invoke(handler);
 
             return new SystemNetHttpClient(handler, true);
-        }
-
-        public void Dispose()
-        {
-            foreach (var kvp in clients)
-            {
-                var client = kvp.Value.Value;
-
-                client.CancelPendingRequests();
-                client.Dispose();
-            }
         }
     }
 }

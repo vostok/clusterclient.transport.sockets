@@ -41,7 +41,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.ResponseReading
                     if (contentLength > settings.MaxResponseBodySize)
                         return new ResponseReadResult(ResponseCode.InsufficientStorage);
 
-                    return await GetResponseWithKnownContentLength(responseMessage, (int) contentLength, cancellationToken).ConfigureAwait(false);
+                    return await GetResponseWithKnownContentLength(responseMessage, (int)contentLength, cancellationToken).ConfigureAwait(false);
                 }
 
                 return await GetResponseWithUnknownContentLength(responseMessage, cancellationToken).ConfigureAwait(false);
@@ -52,6 +52,8 @@ namespace Vostok.Clusterclient.Transport.Sockets.ResponseReading
                 return new ResponseReadResult(ResponseCode.ReceiveFailure);
             }
         }
+
+        private static Task<Stream> GetResponseWithStreamAsync(HttpResponseMessage responseMessage) => responseMessage.Content.ReadAsStreamAsync();
 
         private async Task<ResponseReadResult> GetResponseWithUnknownContentLength(HttpResponseMessage message, CancellationToken cancellationToken)
         {
@@ -71,7 +73,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.ResponseReading
                         return new ResponseReadResult(ResponseCode.InsufficientStorage);
                 }
 
-                var content = new Content(memoryStream.GetBuffer(), 0, (int) memoryStream.Length);
+                var content = new Content(memoryStream.GetBuffer(), 0, (int)memoryStream.Length);
                 return new ResponseReadResult(content);
             }
         }
@@ -142,7 +144,5 @@ namespace Vostok.Clusterclient.Transport.Sockets.ResponseReading
                 return false;
             }
         }
-
-        private Task<Stream> GetResponseWithStreamAsync(HttpResponseMessage responseMessage) => responseMessage.Content.ReadAsStreamAsync();
     }
 }

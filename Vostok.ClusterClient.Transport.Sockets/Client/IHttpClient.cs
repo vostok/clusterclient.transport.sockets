@@ -11,7 +11,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Client
             HttpRequestMessage request,
             HttpCompletionOption completionOption,
             CancellationToken cancellationToken);
-        
+
         void CancelPendingRequests();
     }
 }

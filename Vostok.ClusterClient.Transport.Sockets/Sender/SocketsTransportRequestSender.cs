@@ -100,7 +100,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
 
             socketTuner.Tune(sendContext.Socket);
 
-            var responseCode = (ResponseCode) (int) state.ResponseMessage.StatusCode;
+            var responseCode = (ResponseCode)(int)state.ResponseMessage.StatusCode;
 
             var headers = HeadersConverter.Create(state.ResponseMessage);
 
@@ -118,6 +118,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
             state.PreventNextDispose();
             return new Response(responseCode, null, headers, new ResponseStream(responseReadResult.Stream, state));
         }
+
         private void LogUnknownException(Exception error)
         {
             log.Warn(error, "Unknown error in sending request.");

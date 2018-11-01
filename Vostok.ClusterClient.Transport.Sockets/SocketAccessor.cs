@@ -27,7 +27,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
             catch (Exception e)
             {
                 if (accessor != empty)
-                    log.Warn(e, "Can't get Socket from HttpContentStream");
+                    log.Warn(e, "Can't get Socket from HttpContentStream.");
                 accessor = empty;
                 return null;
             }
@@ -67,7 +67,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
             }
             catch (Exception e)
             {
-                log.Warn(e, "Can't build Socket accessor");
+                log.Warn(e, "Can't build Socket accessor.");
                 return empty;
             }
         }

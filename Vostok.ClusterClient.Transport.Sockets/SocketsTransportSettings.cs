@@ -33,13 +33,13 @@ namespace Vostok.Clusterclient.Transport.Sockets
         public IWebProxy Proxy { get; set; }
 
         /// <summary>
-        ///     Max connections count to single endpoint. When this limit is reached, request falls into queue and wait for free
+        ///     Max connections count to single endpoint. When this limit is reached, request falls into queue and waits for free
         ///     connection.
         /// </summary>
         public int MaxConnectionsPerEndpoint { get; set; } = 10 * 1000;
 
         /// <summary>
-        ///     Gets or sets the maximum response body size in bytes. This parameter doesn't affect on content streaming.
+        ///     Gets or sets the maximum response body size in bytes. This parameter doesn't affect content streaming.
         /// </summary>
         public long? MaxResponseBodySize { get; set; }
 
@@ -71,7 +71,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
         public bool TcpKeepAliveEnabled { get; set; }
 
         /// <summary>
-        ///     Enables ARP cache warmup
+        ///     Enables ARP cache warmup.
         /// </summary>
         public bool ArpCacheWarmupEnabled { get; set; }
 
