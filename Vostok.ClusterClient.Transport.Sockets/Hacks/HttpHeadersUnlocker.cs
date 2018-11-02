@@ -22,15 +22,22 @@ namespace Vostok.Clusterclient.Transport.Sockets.Hacks
 
         private static void EnsureInitialized(ILog log)
         {
-            if (unlocker == null)
+            if (unlocker != null)
+                return;
+            
+            lock (Sync)
             {
-                lock (Sync)
+                if (unlocker == null)
                 {
-                    if (unlocker == null)
-                        unlocker = BuildUnlocker(log);
-                    if (!Test(log))
-                        unlocker = Empty;
+                    var unlockAction = BuildUnlocker(log);
+                    if (Test(unlockAction, log))
+                    {
+                        unlocker = unlockAction;
+                        return;
+                    }
                 }
+                    
+                unlocker = Empty;
             }
         }
 
@@ -90,7 +97,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Hacks
             return true;
         }
 
-        private static bool Test(ILog log)
+        private static bool Test(Action<HttpHeaders> unlockAction, ILog log)
         {
             (string name, string value)[] tests =
             {
@@ -105,7 +112,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Hacks
                 using (var request = new HttpRequestMessage())
                 {
                     var headers = request.Headers;
-                    unlocker(request.Headers);
+                    unlockAction(request.Headers);
 
                     foreach (var test in tests)
                     {
