@@ -17,7 +17,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests.Functional
     {
         [TestCase(10)]
         [TestCase(50)]
-        public void Should_close_tcp_connection_by_connection_idle_timeout2(int connections)
+        public void Should_close_tcp_connection_by_connection_idle_timeout(int connections)
         {
             SetSettings(s => s.ConnectionIdleTimeout = 1.Seconds());
                         
