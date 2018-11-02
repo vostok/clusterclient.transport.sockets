@@ -67,7 +67,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
             }
             catch (Exception e)
             {
-                log.Warn(e, "Can't build Socket accessor.");
+                log.ForContext(typeof(SocketAccessor)).Warn(e, "Can't build Socket accessor.");
                 return empty;
             }
         }
