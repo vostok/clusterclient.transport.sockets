@@ -2,7 +2,7 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
-using Vostok.Clusterclient.Transport.Sockets.ArpCache;
+using Vostok.Commons.Helpers.Network;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.Clusterclient.Transport.Sockets.Hacks

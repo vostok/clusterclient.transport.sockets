@@ -12,13 +12,14 @@ notests *default:
     - vostok.logging.abstractions
     - vostok.clusterclient.core@develop
     - vostok.devtools
-    - vostok.commons.collections
-    - vostok.commons.time
+    - vostok.commons.collections/src
+    - vostok.commons.time/src
+    - vostok.commons.helpers/src
 
 full-build > notests:
   deps:
     - vostok.logging.console
-    - vostok.commons.testing
+    - vostok.commons.testing/src
     - vostok.clusterclient.transport.tests/full-build
   build:
     target: Vostok.ClusterClient.Transport.Sockets.sln
