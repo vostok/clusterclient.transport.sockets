@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using JetBrains.Annotations;
 
 namespace Vostok.Clusterclient.Transport.Sockets
@@ -58,7 +59,10 @@ namespace Vostok.Clusterclient.Transport.Sockets
         /// </summary>
         public bool AllowAutoRedirect { get; set; }
 
-        public TimeSpan ConnectionLifetime { get; set; } = TimeSpan.FromSeconds(3);
+        /// <summary>
+        ///     Gets or sets a maximum time to live of TCP connection.
+        /// </summary>
+        public TimeSpan ConnectionLifetime { get; set; } = Timeout.InfiniteTimeSpan;
 
         /// <summary>
         ///     Gets or sets a custom delegate that can be used to tune underlying <see cref="SocketsHttpHandler" />.
