@@ -28,11 +28,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
         private readonly ISocketsTransportRequestSender sender;
         private readonly IHttpClientProvider clientProvider;
 
-        /// <summary>
-        ///     Creates ClusterClient transport for .NET Core 2.1 and later based on <see cref="SocketsHttpHandler" />
-        /// </summary>
-        /// <param name="settings"></param>
-        /// <param name="log"></param>
+        /// <inheritdoc cref="SocketsHttpHandler" />
         public SocketsTransport(SocketsTransportSettings settings, ILog log)
             : this(settings.Clone(), log, null, null)
         {
