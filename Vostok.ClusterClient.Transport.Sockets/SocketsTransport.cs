@@ -25,7 +25,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
     {
         private readonly SocketsTransportSettings settings;
         private readonly ILog log;
-        private readonly ISocketsTransportRequestSender sender;
+        private readonly IInternalTransport sender;
         private readonly IHttpClientProvider clientProvider;
 
         /// <inheritdoc cref="SocketsHttpHandler" />
@@ -37,7 +37,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
         internal SocketsTransport(
             SocketsTransportSettings settings,
             ILog log,
-            ISocketsTransportRequestSender sender,
+            IInternalTransport sender,
             IHttpClientProvider clientProvider)
         {
             this.settings = settings;
@@ -108,7 +108,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
         public void Dispose()
             => clientProvider.Dispose();
 
-        private static SocketsTransportRequestSender CreateSender(SocketsTransportSettings settings, ILog log)
+        private static InternalTransport CreateSender(SocketsTransportSettings settings, ILog log)
         {
             var pool = new Pool<byte[]>(() => new byte[SocketsTransportConstants.PooledBufferSize]);
 
@@ -116,7 +116,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
             var responseReader = new ResponseReader(settings, pool, log);
             var socketTuner = new SocketTuner(settings, log);
 
-            return new SocketsTransportRequestSender(requestFactory, responseReader, socketTuner, log);
+            return new InternalTransport(requestFactory, responseReader, socketTuner, log);
         }
 
         private void LogRequestTimeout(Request request, TimeSpan timeout)

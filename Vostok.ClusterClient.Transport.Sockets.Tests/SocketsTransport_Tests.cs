@@ -17,7 +17,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
 {
     internal class SocketsTransport_Tests
     {
-        private ISocketsTransportRequestSender sender;
+        private IInternalTransport sender;
         private SocketsTransportSettings settings;
         private SocketsTransport transport;
         private IHttpClientProvider clientProvider;
@@ -29,7 +29,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
         [SetUp]
         public void Setup()
         {
-            sender = Substitute.For<ISocketsTransportRequestSender>();
+            sender = Substitute.For<IInternalTransport>();
             log = new ConsoleLog();
             settings = new SocketsTransportSettings();
             clientProvider = Substitute.For<IHttpClientProvider>();

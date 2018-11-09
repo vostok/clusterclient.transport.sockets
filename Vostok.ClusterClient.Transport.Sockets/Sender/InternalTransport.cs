@@ -12,14 +12,14 @@ using Vostok.Logging.Abstractions;
 
 namespace Vostok.Clusterclient.Transport.Sockets.Sender
 {
-    internal class SocketsTransportRequestSender : ISocketsTransportRequestSender
+    internal class InternalTransport : IInternalTransport
     {
         private readonly IHttpRequestMessageFactory requestFactory;
         private readonly IResponseReader responseReader;
         private readonly ISocketTuner socketTuner;
         private readonly ILog log;
 
-        public SocketsTransportRequestSender(
+        public InternalTransport(
             IHttpRequestMessageFactory requestFactory,
             IResponseReader responseReader,
             ISocketTuner socketTuner,

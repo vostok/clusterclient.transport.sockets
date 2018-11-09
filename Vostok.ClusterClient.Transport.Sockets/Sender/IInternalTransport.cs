@@ -5,7 +5,7 @@ using Vostok.Clusterclient.Transport.Sockets.Client;
 
 namespace Vostok.Clusterclient.Transport.Sockets.Sender
 {
-    internal interface ISocketsTransportRequestSender
+    internal interface IInternalTransport
     {
         Task<Response> SendAsync(IHttpClient client, Request request, CancellationToken cancellationToken);
     }

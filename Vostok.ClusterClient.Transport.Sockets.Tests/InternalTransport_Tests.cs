@@ -18,11 +18,11 @@ using Vostok.Logging.Console;
 
 namespace Vostok.Clusterclient.Transport.Sockets.Tests
 {
-    public class SocketsTransportRequestSender_Tests
+    public class InternalTransport_Tests
     {
         private IHttpRequestMessageFactory requestFactory;
         private IResponseReader responseReader;
-        private SocketsTransportRequestSender sender;
+        private InternalTransport sender;
         private ISocketTuner socketTuner;
         private ILog log;
         private IHttpClient client;
@@ -38,7 +38,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
             log = new ConsoleLog();
             request = Request.Post("http://localhost/");
             
-            sender = new SocketsTransportRequestSender(requestFactory, responseReader, socketTuner, log);
+            sender = new InternalTransport(requestFactory, responseReader, socketTuner, log);
             
             requestFactory.WhenForAnyArgs(x => x.Create(null, default, out _)).Do(x => x[2] = new SendContext());
         }
