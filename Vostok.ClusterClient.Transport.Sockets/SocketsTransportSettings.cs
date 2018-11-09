@@ -13,11 +13,6 @@ namespace Vostok.Clusterclient.Transport.Sockets
     public class SocketsTransportSettings
     {
         /// <summary>
-        ///     Gets or sets an attempts count to establish TCP connection with target host.
-        /// </summary>
-        public int ConnectionAttempts { get; set; } = 2;
-
-        /// <summary>
         ///     How much time connection will be alive after last usage. Note that if none other connections to endpoint is active,
         ///     ConnectionIdleTimeout will be divided by 4.
         /// </summary>
@@ -99,7 +94,6 @@ namespace Vostok.Clusterclient.Transport.Sockets
             MaxResponseBodySize = MaxResponseBodySize,
             BufferFactory = BufferFactory,
             Proxy = Proxy,
-            ConnectionAttempts = ConnectionAttempts,
             Tune = Tune,
             AllowAutoRedirect = AllowAutoRedirect,
             ConnectionIdleTimeout = ConnectionIdleTimeout,
