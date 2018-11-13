@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Net;
-using System.Net.Http;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using Vostok.Clusterclient.Transport.Sockets.Client;
 
@@ -12,6 +9,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
     {
         private readonly SocketsTransportSettings settings;
         private readonly ConcurrentDictionary<TimeSpan, Lazy<IHttpClient>> clients;
+        private readonly IHttpClientGlobalCache globalCache = HttpClientGlobalCache.Instance;
 
         public HttpClientProvider(SocketsTransportSettings settings)
         {
@@ -23,7 +21,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
             => clients
                 .GetOrAdd(
                     connectionTimeout ?? Timeout.InfiniteTimeSpan,
-                    t => new Lazy<IHttpClient>(() => CreateClient(t)))
+                    t => globalCache.GetClient(settings, t))
                 .Value;
 
         public void Dispose()
@@ -35,34 +33,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
                 client.CancelPendingRequests();
                 client.Dispose();
             }
-        }
-
-        private IHttpClient CreateClient(TimeSpan connectionTimeout)
-        {
-            var handler = new SocketsHttpHandler
-            {
-                Proxy = settings.Proxy,
-                ConnectTimeout = connectionTimeout,
-                UseProxy = settings.Proxy != null,
-                AllowAutoRedirect = settings.AllowAutoRedirect,
-                PooledConnectionIdleTimeout = settings.ConnectionIdleTimeout,
-                PooledConnectionLifetime = settings.ConnectionLifetime,
-                MaxConnectionsPerServer = settings.MaxConnectionsPerEndpoint,
-                AutomaticDecompression = DecompressionMethods.None,
-                UseCookies = false,
-                SslOptions =
-                {
-                    CertificateRevocationCheckMode = X509RevocationMode.NoCheck,
-                    RemoteCertificateValidationCallback = (_, __, ___, ____) => true
-                }
-            };
-
-            if (settings.MaxResponseDrainSize.HasValue)
-                handler.MaxResponseDrainSize = settings.MaxResponseDrainSize.Value;
-
-            settings.Tune?.Invoke(handler);
-
-            return new SystemNetHttpClient(handler, true);
         }
     }
 }

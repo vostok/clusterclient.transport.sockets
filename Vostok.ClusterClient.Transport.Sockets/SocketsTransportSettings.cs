@@ -60,11 +60,6 @@ namespace Vostok.Clusterclient.Transport.Sockets
         public TimeSpan ConnectionLifetime { get; set; } = Timeout.InfiniteTimeSpan;
 
         /// <summary>
-        ///     Gets or sets a custom delegate that can be used to tune underlying <see cref="SocketsHttpHandler" />.
-        /// </summary>
-        public Action<SocketsHttpHandler> Tune { get; set; }
-
-        /// <summary>
         ///     Enables TCP keep alive.
         /// </summary>
         public bool TcpKeepAliveEnabled { get; set; }
@@ -94,7 +89,6 @@ namespace Vostok.Clusterclient.Transport.Sockets
             MaxResponseBodySize = MaxResponseBodySize,
             BufferFactory = BufferFactory,
             Proxy = Proxy,
-            Tune = Tune,
             AllowAutoRedirect = AllowAutoRedirect,
             ConnectionIdleTimeout = ConnectionIdleTimeout,
             RequestAbortTimeout = RequestAbortTimeout,
