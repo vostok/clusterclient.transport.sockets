@@ -42,6 +42,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
                 PooledConnectionLifetime = settings.ConnectionLifetime,
                 MaxConnectionsPerServer = settings.MaxConnectionsPerEndpoint,
                 AutomaticDecompression = DecompressionMethods.None,
+                MaxResponseHeadersLength = 16*1024,
                 UseCookies = false,
                 SslOptions =
                 {
