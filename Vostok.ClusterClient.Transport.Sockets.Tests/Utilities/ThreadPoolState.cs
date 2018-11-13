@@ -1,4 +1,4 @@
-namespace Vostok.ClusterClient.Transport.Sockets.Tests.Utilities
+namespace Vostok.Clusterclient.Transport.Sockets.Tests.Utilities
 {
     internal struct ThreadPoolState
     {

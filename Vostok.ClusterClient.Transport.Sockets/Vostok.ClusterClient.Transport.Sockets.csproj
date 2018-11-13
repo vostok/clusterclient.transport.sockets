@@ -6,6 +6,7 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <Configurations>Debug;Release</Configurations>
     <LangVersion>7.3</LangVersion>
+    <RootNamespace>Vostok.Clusterclient.Transport.Sockets</RootNamespace>
   </PropertyGroup>
   <PropertyGroup>
     <VersionPrefix>0.0.1</VersionPrefix>
@@ -38,8 +39,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\vostok.commons.collections\Vostok.Commons.Collections\UnboundedObjectPool.cs" Link="Collections\UnboundedObjectPool.cs" />
-    <Compile Include="..\..\vostok.commons.helpers\Vostok.Commons.Helpers\Extensions\TimeSpanExtensions.cs" Link="Commons\TimeSpanExtensions.cs" />
+    <Compile Include="..\..\vostok.commons.collections\Vostok.Commons.Collections\UnboundedObjectPool.cs" Link="Commons\UnboundedObjectPool.cs" />
+    <Compile Include="..\..\vostok.commons.collections\Vostok.Commons.Collections\RecyclingBoundedCache.cs" Link="Commons\RecyclingBoundedCache.cs" />
+    <Compile Include="..\..\vostok.commons.time\Vostok.Commons.Time\TimeSpanFormatting.cs" Link="Commons\TimeSpanFormatting.cs" />
+    <Compile Include="..\..\vostok.commons.helpers\Vostok.Commons.Helpers\Network\*.cs" Link="Commons\Network\" />
   </ItemGroup>
 
 </Project>

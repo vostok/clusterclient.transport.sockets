@@ -6,18 +6,18 @@ using FluentAssertions.Extensions;
 using Microsoft.Diagnostics.Tracing.Parsers;
 using Microsoft.Diagnostics.Tracing.Session;
 using NUnit.Framework;
-using Vostok.ClusterClient.Core.Model;
-using Vostok.ClusterClient.Transport.Sockets.Tests.Functional.Helpers;
+using Vostok.Clusterclient.Core.Model;
+using Vostok.Clusterclient.Transport.Tests.Shared.Functional.Helpers;
 using Vostok.Commons.Testing;
 
-namespace Vostok.ClusterClient.Transport.Sockets.Tests.Functional
+namespace Vostok.Clusterclient.Transport.Sockets.Tests.Functional
 {
     [Explicit]
     internal class ConnectionIdleTimeoutTests : TransportTestsBase
     {
         [TestCase(10)]
         [TestCase(50)]
-        public void Should_close_tcp_connection_by_connection_idle_timeout2(int connections)
+        public void Should_close_tcp_connection_by_connection_idle_timeout(int connections)
         {
             SetSettings(s => s.ConnectionIdleTimeout = 1.Seconds());
                         
