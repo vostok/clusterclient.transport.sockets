@@ -24,7 +24,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Hacks
         {
             if (unlocker != null)
                 return;
-            
+
             lock (Sync)
             {
                 if (unlocker == null)
@@ -36,7 +36,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Hacks
                         return;
                     }
                 }
-                    
+
                 unlocker = Empty;
             }
         }

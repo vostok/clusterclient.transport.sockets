@@ -10,8 +10,8 @@ namespace Vostok.Clusterclient.Transport.Sockets
 {
     internal static class SocketAccessor
     {
-        private static readonly Func<Stream, Socket> empty = _ => null;
-        private static readonly object sync = new object();
+        private static readonly Func<Stream, Socket> Empty = _ => null;
+        private static readonly object Sync = new object();
 
         private static volatile Func<Stream, Socket> accessor;
 
@@ -26,9 +26,9 @@ namespace Vostok.Clusterclient.Transport.Sockets
             }
             catch (Exception e)
             {
-                if (accessor != empty)
+                if (accessor != Empty)
                     log.Warn(e, "Can't get Socket from HttpContentStream.");
-                accessor = empty;
+                accessor = Empty;
                 return null;
             }
         }
@@ -37,7 +37,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
         {
             if (accessor == null)
             {
-                lock (sync)
+                lock (Sync)
                 {
                     if (accessor == null)
                         accessor = Build(log);
@@ -68,7 +68,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
             catch (Exception e)
             {
                 log.ForContext(typeof(SocketAccessor)).Warn(e, "Can't build Socket accessor.");
-                return empty;
+                return Empty;
             }
         }
     }

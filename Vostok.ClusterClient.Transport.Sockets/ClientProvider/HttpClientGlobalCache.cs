@@ -8,14 +8,14 @@ using Vostok.Commons.Collections;
 namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
 {
     internal class HttpClientGlobalCache : IHttpClientGlobalCache
-    {   
+    {
         private const int Capacity = 20;
-        
+
+        public static readonly HttpClientGlobalCache Instance = new HttpClientGlobalCache();
+
         private readonly RecyclingBoundedCache<SettingsKey, Lazy<IHttpClient>> clients
             = new RecyclingBoundedCache<SettingsKey, Lazy<IHttpClient>>(Capacity);
-     
-        public static readonly HttpClientGlobalCache Instance = new HttpClientGlobalCache();
-        
+
         public Lazy<IHttpClient> GetClient(SocketsTransportSettings settings, TimeSpan connectionTimeout)
         {
             var settingsKey = new SettingsKey(
@@ -26,7 +26,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
                 settings.MaxConnectionsPerEndpoint,
                 settings.MaxResponseDrainSize,
                 settings.AllowAutoRedirect);
-            
+
             return clients.Obtain(settingsKey, key => new Lazy<IHttpClient>(() => CreateClient(settingsKey)));
         }
 
@@ -42,7 +42,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
                 PooledConnectionLifetime = settings.ConnectionLifetime,
                 MaxConnectionsPerServer = settings.MaxConnectionsPerEndpoint,
                 AutomaticDecompression = DecompressionMethods.None,
-                MaxResponseHeadersLength = 16*1024,
+                MaxResponseHeadersLength = 16 * 1024,
                 UseCookies = false,
                 SslOptions =
                 {

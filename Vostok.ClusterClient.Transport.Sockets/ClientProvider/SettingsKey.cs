@@ -5,6 +5,14 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
 {
     internal class SettingsKey : IEquatable<SettingsKey>
     {
+        public readonly TimeSpan ConnectionTimeout;
+        public readonly TimeSpan ConnectionIdleTimeout;
+        public readonly TimeSpan ConnectionLifetime;
+        public readonly IWebProxy Proxy;
+        public readonly int MaxConnectionsPerEndpoint;
+        public readonly int? MaxResponseDrainSize;
+        public readonly bool AllowAutoRedirect;
+
         public SettingsKey(
             TimeSpan connectionTimeout,
             TimeSpan connectionIdleTimeout,
@@ -23,16 +31,8 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
             AllowAutoRedirect = allowAutoRedirect;
         }
 
-        public readonly TimeSpan ConnectionTimeout;
-        public readonly TimeSpan ConnectionIdleTimeout;
-        public readonly TimeSpan ConnectionLifetime;
-        public readonly IWebProxy Proxy;
-        public readonly int MaxConnectionsPerEndpoint;
-        public readonly int? MaxResponseDrainSize;
-        public readonly bool AllowAutoRedirect;
-
         #region Equality
-        
+
         public bool Equals(SettingsKey other)
         {
             return ConnectionTimeout.Equals(other.ConnectionTimeout) &&
@@ -67,7 +67,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
         public static bool operator==(SettingsKey left, SettingsKey right) => left.Equals(right);
 
         public static bool operator!=(SettingsKey left, SettingsKey right) => !left.Equals(right);
-        
+
         #endregion
     }
 }
