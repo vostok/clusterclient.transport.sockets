@@ -38,13 +38,13 @@ namespace Vostok.Clusterclient.Transport.Sockets
         {
             var headers = Headers.Empty;
 
-            foreach (var responseHeader in responseMessage.Headers)
-                headers = headers.Set(responseHeader.Key, string.Join(", ", responseHeader.Value));
+            foreach (var (key, value) in responseMessage.Headers)
+                headers = headers.Set(key, string.Join(", ", value));
 
             if (responseMessage.Content != null)
             {
-                foreach (var contentHeader in responseMessage.Content.Headers)
-                    headers = headers.Set(contentHeader.Key, string.Join(", ", contentHeader.Value));
+                foreach (var (key, value) in responseMessage.Content.Headers)
+                    headers = headers.Set(key, string.Join(", ", value));
             }
 
             return headers;

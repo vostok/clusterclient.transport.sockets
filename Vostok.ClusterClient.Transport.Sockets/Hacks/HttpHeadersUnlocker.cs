@@ -114,22 +114,22 @@ namespace Vostok.Clusterclient.Transport.Sockets.Hacks
                     var headers = request.Headers;
                     unlockAction(request.Headers);
 
-                    foreach (var test in tests)
+                    foreach (var (name, expectedValue) in tests)
                     {
-                        headers.Add(test.name, test.value);
-                        if (!headers.TryGetValues(test.name, out var value))
+                        headers.Add(name, expectedValue);
+                        if (!headers.TryGetValues(name, out var value))
                         {
                             log
                                 .ForContext(typeof(HttpHeadersUnlocker))
-                                .Warn($"Can't unlock HttpHeaders. Test failed on header {test.name}. Can't set header value.");
+                                .Warn($"Can't unlock HttpHeaders. Test failed on header {name}. Can't set header value.");
                             return false;
                         }
 
-                        if (!string.Equals(value.FirstOrDefault(), test.value, StringComparison.Ordinal))
+                        if (!string.Equals(value.FirstOrDefault(), expectedValue, StringComparison.Ordinal))
                         {
                             log
                                 .ForContext(typeof(HttpHeadersUnlocker))
-                                .Warn($"Can't unlock HttpHeaders. Test failed on header {test.name}. Expected value: '{test.value}', actual: '{value}'");
+                                .Warn($"Can't unlock HttpHeaders. Test failed on header {name}. Expected value: '{expectedValue}', actual: '{value}'");
                             return false;
                         }
                     }

@@ -35,6 +35,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 }
                 catch
                 {
+                    // ignored
                 }
                 finally
                 {
@@ -53,6 +54,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 }
                 catch
                 {
+                    // ignored
                 }
                 finally
                 {
