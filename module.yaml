@@ -9,9 +9,9 @@ notests *default:
     - Vostok.ClusterClient.Transport.Sockets/bin/Release/netcoreapp2.1/Vostok.ClusterClient.Transport.Sockets.dll
 
   deps:
+    - vostok.devtools
     - vostok.logging.abstractions
     - vostok.clusterclient.core
-    - vostok.devtools
     - vostok.commons.collections/src
     - vostok.commons.time/src
     - vostok.commons.helpers/src
@@ -20,7 +20,8 @@ full-build > notests:
   deps:
     - vostok.logging.console
     - vostok.commons.testing/src
-    - vostok.clusterclient.transport.tests/full-build
+    - vostok.clusterclient.transport.tests
+
   build:
     target: Vostok.ClusterClient.Transport.Sockets.sln
     configuration: Release
