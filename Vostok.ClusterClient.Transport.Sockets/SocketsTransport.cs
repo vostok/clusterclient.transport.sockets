@@ -8,7 +8,6 @@ using Vostok.Clusterclient.Core.Transport;
 using Vostok.Clusterclient.Transport.Sockets.ClientProvider;
 using Vostok.Clusterclient.Transport.Sockets.Hacks;
 using Vostok.Clusterclient.Transport.Sockets.Messages;
-using Vostok.Clusterclient.Transport.Sockets.Pool;
 using Vostok.Clusterclient.Transport.Sockets.ResponseReading;
 using Vostok.Clusterclient.Transport.Sockets.Sender;
 using Vostok.Commons.Time;
@@ -110,10 +109,8 @@ namespace Vostok.Clusterclient.Transport.Sockets
 
         private static InternalTransport CreateSender(SocketsTransportSettings settings, ILog log)
         {
-            var pool = new Pool<byte[]>(() => new byte[SocketsTransportConstants.PooledBufferSize]);
-
-            var requestFactory = new HttpRequestMessageFactory(pool, log);
-            var responseReader = new ResponseReader(settings, pool, log);
+            var requestFactory = new HttpRequestMessageFactory(log);
+            var responseReader = new ResponseReader(settings, log);
             var socketTuner = new SocketTuner(settings, log);
 
             return new InternalTransport(requestFactory, responseReader, socketTuner, log);

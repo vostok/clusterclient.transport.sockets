@@ -6,18 +6,15 @@ using NUnit.Framework;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Transport.Sockets.Contents;
 using Vostok.Clusterclient.Transport.Sockets.Messages;
-using Vostok.Clusterclient.Transport.Sockets.Pool;
 using Vostok.Logging.Console;
 
 namespace Vostok.Clusterclient.Transport.Sockets.Tests
 {
     internal class HttpRequestMessageFactory_Tests
     {
-        private readonly HttpRequestMessageFactory factory = new HttpRequestMessageFactory(
-            new Pool<byte[]>(() => new byte[1000]),
-            new ConsoleLog());
+        private readonly HttpRequestMessageFactory factory = new HttpRequestMessageFactory(new ConsoleLog());
         
-        private Request request = Request.Post("http://localhost");
+        private readonly Request request = Request.Post("http://localhost");
         
         [Test]
         public void Should_create_HttpRequestMessage_with_empty_content_when_content_is_not_specified()

@@ -4,7 +4,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Vostok.Clusterclient.Core.Model;
-using Vostok.Clusterclient.Transport.Sockets.Pool;
+using Vostok.Clusterclient.Transport.Sockets.Helpers;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.Clusterclient.Transport.Sockets.Contents
@@ -12,19 +12,12 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
     internal class RequestByteArrayContent : ClusterClientHttpContent
     {
         private readonly Content content;
-        private readonly IPool<byte[]> pool;
         private readonly CancellationToken cancellationToken;
 
-        public RequestByteArrayContent(
-            Request request,
-            SendContext context,
-            IPool<byte[]> pool,
-            ILog log,
-            CancellationToken cancellationToken)
+        public RequestByteArrayContent(Request request, SendContext context, ILog log, CancellationToken cancellationToken)
             : base(request, context, log)
         {
             content = request.Content ?? throw new ArgumentNullException(nameof(request.Content), "Bug in code: content is null.");
-            this.pool = pool;
             this.cancellationToken = cancellationToken;
 
             Headers.ContentLength = content.Length;
@@ -39,7 +32,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Contents
                 return;
             }
 
-            using (pool.AcquireHandle(out var buffer))
+            using (BufferPool.Acquire(out var buffer))
             {
                 var index = content.Offset;
                 var end = content.Offset + content.Length;

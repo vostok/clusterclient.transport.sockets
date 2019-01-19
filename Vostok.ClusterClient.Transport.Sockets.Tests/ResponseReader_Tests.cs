@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
 using Vostok.Clusterclient.Core.Model;
-using Vostok.Clusterclient.Transport.Sockets.Pool;
 using Vostok.Clusterclient.Transport.Sockets.ResponseReading;
 using Vostok.Logging.Abstractions;
 
@@ -22,11 +21,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
         public void Setup()
         {
             settings = new SocketsTransportSettings();
-            reader = new ResponseReader(
-                settings,
-                new Pool<byte[]>(() => new byte[100]),
-                new SilentLog());
-
+            reader = new ResponseReader(settings, new SilentLog());
         }
 
         [TestCase(null)]

@@ -2,19 +2,16 @@ using System.Net.Http;
 using System.Threading;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Transport.Sockets.Contents;
-using Vostok.Clusterclient.Transport.Sockets.Pool;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.Clusterclient.Transport.Sockets.Messages
 {
     internal class HttpRequestMessageFactory : IHttpRequestMessageFactory
     {
-        private readonly IPool<byte[]> pool;
         private readonly ILog log;
 
-        public HttpRequestMessageFactory(IPool<byte[]> pool, ILog log)
+        public HttpRequestMessageFactory(ILog log)
         {
-            this.pool = pool;
             this.log = log;
         }
 
@@ -66,9 +63,9 @@ namespace Vostok.Clusterclient.Transport.Sockets.Messages
             var streamContent = request.StreamContent;
 
             if (content != null && content.Length > 0)
-                return new RequestByteArrayContent(request, sendContext, pool, log, cancellationToken);
+                return new RequestByteArrayContent(request, sendContext, log, cancellationToken);
             if (streamContent != null)
-                return new RequestStreamContent(request, sendContext, pool, log, cancellationToken);
+                return new RequestStreamContent(request, sendContext, log, cancellationToken);
 
             // (epeshk): return empty 'content' which extract Socket instance from write stream
             return new RequestEmptyContent(request, sendContext, log);

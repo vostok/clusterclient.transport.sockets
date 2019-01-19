@@ -4,20 +4,18 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Vostok.Clusterclient.Core.Model;
-using Vostok.Clusterclient.Transport.Sockets.Pool;
+using Vostok.Clusterclient.Transport.Sockets.Helpers;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.Clusterclient.Transport.Sockets.ResponseReading
 {
     internal class ResponseReader : IResponseReader
     {
-        private readonly IPool<byte[]> pool;
         private readonly ILog log;
         private readonly SocketsTransportSettings settings;
 
-        public ResponseReader(SocketsTransportSettings settings, IPool<byte[]> pool, ILog log)
+        public ResponseReader(SocketsTransportSettings settings, ILog log)
         {
-            this.pool = pool;
             this.log = log;
             this.settings = settings;
         }
@@ -59,7 +57,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.ResponseReading
         {
             using (var stream = await message.Content.ReadAsStreamAsync().ConfigureAwait(false))
             using (var memoryStream = new MemoryStream())
-            using (pool.AcquireHandle(out var buffer))
+            using (BufferPool.Acquire(out var buffer))
             {
                 while (true)
                 {
@@ -109,7 +107,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.ResponseReading
                 }
                 else
                 {
-                    using (pool.AcquireHandle(out var buffer))
+                    using (BufferPool.Acquire(out var buffer))
                     {
                         while (totalBytesRead < contentLength)
                         {
