@@ -60,12 +60,12 @@ namespace Vostok.Clusterclient.Transport.Sockets
         /// <summary>
         /// Enables/disables TCP keep-alive mechanism.
         /// </summary>
-        public bool TcpKeepAliveEnabled { get; set; }
+        public bool TcpKeepAliveEnabled { get; set; } = true;
 
         /// <summary>
         /// Enables/disables ARP cache warmup.
         /// </summary>
-        public bool ArpCacheWarmupEnabled { get; set; }
+        public bool ArpCacheWarmupEnabled { get; set; } = true;
 
         /// <summary>
         /// Gets or sets the duration between two keep-alive transmissions in idle condition.
