@@ -30,7 +30,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
 
         /// <inheritdoc cref="SocketsHttpHandler" />
         public SocketsTransport(SocketsTransportSettings settings, ILog log)
-            : this(settings.Clone(), log, null, null)
+            : this(settings, log, null, null)
         {
         }
 

@@ -6,7 +6,7 @@ using JetBrains.Annotations;
 namespace Vostok.Clusterclient.Transport.Sockets
 {
     /// <summary>
-    ///     A class that represents <see cref="SocketsTransport" /> settings.
+    /// A class that represents <see cref="SocketsTransport" /> settings.
     /// </summary>
     [PublicAPI]
     public class SocketsTransportSettings
@@ -79,22 +79,5 @@ namespace Vostok.Clusterclient.Transport.Sockets
         public TimeSpan TcpKeepAliveInterval { get; set; } = TimeSpan.FromSeconds(1);
 
         internal Func<int, byte[]> BufferFactory { get; set; } = size => new byte[size];
-
-        internal SocketsTransportSettings Clone() => new SocketsTransportSettings
-        {
-            UseResponseStreaming = UseResponseStreaming,
-            MaxResponseBodySize = MaxResponseBodySize,
-            BufferFactory = BufferFactory,
-            Proxy = Proxy,
-            AllowAutoRedirect = AllowAutoRedirect,
-            ConnectionIdleTimeout = ConnectionIdleTimeout,
-            RequestAbortTimeout = RequestAbortTimeout,
-            MaxConnectionsPerEndpoint = MaxConnectionsPerEndpoint,
-            TcpKeepAliveEnabled = TcpKeepAliveEnabled,
-            ConnectionLifetime = ConnectionLifetime,
-            MaxResponseDrainSize = MaxResponseDrainSize,
-            TcpKeepAliveInterval = TcpKeepAliveInterval,
-            TcpKeepAliveTime = TcpKeepAliveTime
-        };
     }
 }
