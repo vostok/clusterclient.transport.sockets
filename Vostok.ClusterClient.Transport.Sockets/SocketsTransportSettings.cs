@@ -12,10 +12,14 @@ namespace Vostok.Clusterclient.Transport.Sockets
     public class SocketsTransportSettings
     {
         /// <summary>
-        /// How much time connection will be alive after last usage. Note that if none other connections to endpoint is active,
-        /// <see cref="ConnectionIdleTimeout"/> value will be divided by 4.
+        /// How much time connection will be alive after last usage. Note that if no other connections to endpoint are active, its value will be divided by 4.
         /// </summary>
         public TimeSpan ConnectionIdleTimeout { get; set; } = TimeSpan.FromMinutes(2);
+
+        /// <summary>
+        /// Gets or sets a maximum time to live for TCP connections. Limiting the lifetime of connections helps to notice changes in DNS records.
+        /// </summary>
+        public TimeSpan ConnectionLifetime { get; set; } = TimeSpan.FromMinutes(10);
 
         /// <summary>
         /// How much time client should wait for internal handler to return control after request cancellation.
@@ -47,10 +51,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
         /// </summary>
         public bool AllowAutoRedirect { get; set; }
 
-        /// <summary>
-        /// Gets or sets a maximum time to live for TCP connections.
-        /// </summary>
-        public TimeSpan ConnectionLifetime { get; set; } = Timeout.InfiniteTimeSpan;
+
 
         /// <summary>
         /// Enables/disables TCP keep-alive mechanism.
