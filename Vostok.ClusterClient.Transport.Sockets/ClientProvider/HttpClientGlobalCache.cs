@@ -24,7 +24,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
                 settings.ConnectionLifetime,
                 settings.Proxy,
                 settings.MaxConnectionsPerEndpoint,
-                settings.MaxResponseDrainSize,
                 settings.AllowAutoRedirect);
 
             return clients.Obtain(settingsKey, key => new Lazy<IHttpClient>(() => CreateClient(settingsKey)));
@@ -50,9 +49,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
                     RemoteCertificateValidationCallback = (_, __, ___, ____) => true
                 }
             };
-
-            if (settings.MaxResponseDrainSize.HasValue)
-                handler.MaxResponseDrainSize = settings.MaxResponseDrainSize.Value;
 
             return new SystemNetHttpClient(handler, true);
         }

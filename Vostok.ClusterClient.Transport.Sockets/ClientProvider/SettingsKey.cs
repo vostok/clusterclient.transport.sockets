@@ -10,7 +10,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
         public readonly TimeSpan ConnectionLifetime;
         public readonly IWebProxy Proxy;
         public readonly int MaxConnectionsPerEndpoint;
-        public readonly int? MaxResponseDrainSize;
         public readonly bool AllowAutoRedirect;
 
         public SettingsKey(
@@ -19,7 +18,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
             TimeSpan connectionLifetime,
             IWebProxy proxy,
             int maxConnectionsPerEndpoint,
-            int? maxResponseDrainSize,
             bool allowAutoRedirect)
         {
             ConnectionTimeout = connectionTimeout;
@@ -27,7 +25,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
             ConnectionLifetime = connectionLifetime;
             Proxy = proxy;
             MaxConnectionsPerEndpoint = maxConnectionsPerEndpoint;
-            MaxResponseDrainSize = maxResponseDrainSize;
             AllowAutoRedirect = allowAutoRedirect;
         }
 
@@ -39,7 +36,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
                    ConnectionIdleTimeout.Equals(other.ConnectionIdleTimeout) &&
                    ReferenceEquals(Proxy, other.Proxy) &&
                    MaxConnectionsPerEndpoint == other.MaxConnectionsPerEndpoint &&
-                   MaxResponseDrainSize == other.MaxResponseDrainSize &&
                    AllowAutoRedirect == other.AllowAutoRedirect;
         }
 
@@ -58,7 +54,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.ClientProvider
                 hashCode = (hashCode * 397) ^ ConnectionIdleTimeout.GetHashCode();
                 hashCode = (hashCode * 397) ^ (Proxy != null ? Proxy.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ MaxConnectionsPerEndpoint;
-                hashCode = (hashCode * 397) ^ MaxResponseDrainSize.GetHashCode();
                 hashCode = (hashCode * 397) ^ AllowAutoRedirect.GetHashCode();
                 return hashCode;
             }

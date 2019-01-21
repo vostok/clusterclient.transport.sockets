@@ -38,11 +38,6 @@ namespace Vostok.Clusterclient.Transport.Sockets
         public long? MaxResponseBodySize { get; set; }
 
         /// <summary>
-        /// Gets or sets the maximum amount of data that can be drained from responses in bytes.
-        /// </summary>
-        public int? MaxResponseDrainSize { get; set; }
-
-        /// <summary>
         /// Gets or sets the delegate that decides whether to use response streaming or not.
         /// </summary>
         public Predicate<long?> UseResponseStreaming { get; set; } = _ => false;
