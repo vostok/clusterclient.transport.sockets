@@ -28,6 +28,12 @@ namespace Vostok.Clusterclient.Transport.Sockets
         private readonly IHttpClientProvider clientProvider;
 
         /// <inheritdoc cref="SocketsHttpHandler" />
+        public SocketsTransport(ILog log)
+            : this(new SocketsTransportSettings(), log)
+        {
+        }
+
+        /// <inheritdoc cref="SocketsHttpHandler" />
         public SocketsTransport(SocketsTransportSettings settings, ILog log)
             : this(settings, log, null, null)
         {
