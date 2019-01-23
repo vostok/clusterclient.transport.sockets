@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using FluentAssertions.Extensions;
 using NUnit.Framework;
 using Vostok.Clusterclient.Core.Model;
-using Vostok.Clusterclient.Transport.Sockets.Tests.Utilities;
+using Vostok.Commons.Threading;
 using Vostok.Logging.Abstractions;
 using Vostok.Logging.Console;
 
@@ -18,7 +18,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests.Functional
 
         static TransportTestsBase()
         {
-            ThreadPoolUtility.SetUp();
+            ThreadPoolUtility.Setup();
         }
 
         [SetUp]
