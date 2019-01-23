@@ -8,6 +8,7 @@ using Vostok.Clusterclient.Transport.Sockets.Client;
 using Vostok.Clusterclient.Transport.Sockets.Hacks;
 using Vostok.Clusterclient.Transport.Sockets.Messages;
 using Vostok.Clusterclient.Transport.Sockets.ResponseReading;
+using Vostok.Clusterclient.Transport.SystemNetHttp.Header;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.Clusterclient.Transport.Sockets.Sender
@@ -102,7 +103,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Sender
 
             var responseCode = (ResponseCode)(int)state.ResponseMessage.StatusCode;
 
-            var headers = HeadersConverter.Create(state.ResponseMessage);
+            var headers = ResponseHeadersConverter.Convert(state.ResponseMessage);
 
             var responseReadResult = await responseReader
                 .ReadResponseBodyAsync(state.ResponseMessage, cancellationToken)

@@ -15,6 +15,7 @@ notests *default:
     - vostok.commons.collections/src
     - vostok.commons.time/src
     - vostok.commons.helpers/src
+    - vostok.clusterclient.transport.systemnethttp/src
 
 full-build > notests:
   deps:

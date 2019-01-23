@@ -2,6 +2,7 @@ using System.Net.Http;
 using System.Threading;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Transport.Sockets.Contents;
+using Vostok.Clusterclient.Transport.SystemNetHttp.Header;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.Clusterclient.Transport.Sockets.Messages
@@ -27,7 +28,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Messages
                 Content = content
             };
 
-            HeadersConverter.Fill(request, message, log);
+            RequestHeadersConverter.Fill(request, message, log);
 
             return message;
         }

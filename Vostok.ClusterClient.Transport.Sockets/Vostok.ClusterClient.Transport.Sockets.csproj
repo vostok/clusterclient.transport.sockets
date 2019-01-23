@@ -43,4 +43,6 @@
     <Compile Include="..\..\vostok.commons.helpers\Vostok.Commons.Helpers\Network\*.cs" LinkBase="Commons\" />
   </ItemGroup>
 
+  <Import Project="..\..\vostok.clusterclient.transport.systemnethttp\Vostok.ClusterClient.Transport.SystemNetHttp.props" />
+
 </Project>
