@@ -31,7 +31,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Hacks
             }
             catch (Exception e)
             {
-                log.ForContext<SocketTuner>().Warn(e);
+                log.Warn(e);
             }
 
             try
@@ -40,7 +40,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Hacks
             }
             catch (Exception e)
             {
-                log.ForContext<SocketTuner>().Warn(e);
+                log.Warn(e);
             }
         }
 
