@@ -15,19 +15,22 @@ namespace Vostok.Clusterclient.Transport.Sockets
 
         private static volatile Func<Stream, Socket> accessor;
 
-        public static Socket GetSocket(Stream httpContentStream, ILog log)
+        public static Socket GetSocket(Stream stream, ILog log)
         {
-            if (httpContentStream == null)
+            if (stream == null)
                 return null;
+
             EnsureInitialized(log);
+
             try
             {
-                return accessor(httpContentStream);
+                return accessor(stream);
             }
-            catch (Exception e)
+            catch (Exception error)
             {
                 if (accessor != Empty)
-                    log.Warn(e, "Can't get Socket from HttpContentStream.");
+                    log.Warn(error, "Failed to obtain Socket instance from request stream of type {StreamType}.", stream.GetType().Name);
+
                 accessor = Empty;
                 return null;
             }
@@ -65,9 +68,9 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 );
                 return Expression.Lambda<Func<Stream, Socket>>(condition, parameterExpr).Compile();
             }
-            catch (Exception e)
+            catch (Exception error)
             {
-                log.ForContext(typeof(SocketAccessor)).Warn(e, "Can't build Socket accessor.");
+                log.ForContext(typeof(SocketAccessor)).Warn(error, "Failed to build Socket accessor delegate.");
                 return Empty;
             }
         }
