@@ -23,6 +23,8 @@ namespace Vostok.Clusterclient.Transport.Sockets.Hacks
             keepAliveValues = keepAliveEnabled ? GetKeepAliveValues(settings) : null;
         }
 
+        public bool CanTune => arpWarmupEnabled || keepAliveEnabled;
+
         public void Tune(Socket socket)
         {
             if (socket == null)
