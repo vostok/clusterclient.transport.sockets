@@ -71,7 +71,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Hacks
 
         private void TuneArp(Socket socket)
         {
-            if (settings.ArpCacheWarmupEnabled && socket.RemoteEndPoint is IPEndPoint ipEndPoint)
+            if (settings.ArpCacheWarmupEnabled && socket.RemoteEndPoint is IPEndPoint ipEndPoint && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 ArpCacheMaintainer.ReportAddress(ipEndPoint.Address);
         }
 
