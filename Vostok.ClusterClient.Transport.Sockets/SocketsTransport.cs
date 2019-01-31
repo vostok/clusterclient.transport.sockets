@@ -5,12 +5,11 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Core.Transport;
-using Vostok.Clusterclient.Transport.Sockets.ClientProvider;
-using Vostok.Clusterclient.Transport.Sockets.Hacks;
-using Vostok.Clusterclient.Transport.Sockets.Messages;
-using Vostok.Clusterclient.Transport.Sockets.ResponseReading;
-using Vostok.Clusterclient.Transport.Sockets.Sender;
-using Vostok.Commons.Time;
+using Vostok.Clusterclient.Transport.SystemNetHttp.BodyReading;
+using Vostok.Clusterclient.Transport.SystemNetHttp.Contents;
+using Vostok.Clusterclient.Transport.SystemNetHttp.Header;
+using Vostok.Clusterclient.Transport.SystemNetHttp.Helpers;
+using Vostok.Clusterclient.Transport.SystemNetHttp.Messages;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.Clusterclient.Transport.Sockets
@@ -20,121 +19,84 @@ namespace Vostok.Clusterclient.Transport.Sockets
     ///     <para>Internally uses <see cref="SocketsHttpHandler" />.</para>
     /// </summary>
     [PublicAPI]
-    public class SocketsTransport : ITransport, IDisposable
+    public class SocketsTransport : ITransport
     {
+        private static readonly SocketsTransportSettings DefaultSettings = new SocketsTransportSettings();
+
         private readonly SocketsTransportSettings settings;
         private readonly ILog log;
-        private readonly IInternalTransport sender;
-        private readonly IHttpClientProvider clientProvider;
+
+        private readonly SocketsHandlerProvider handlerProvider;
+        private readonly TimeoutProvider timeoutProvider;
+        private readonly ErrorHandler errorHandler;
+        private readonly SocketTuner socketTuner;
+        private readonly BodyReader bodyReader;
 
         /// <inheritdoc cref="SocketsHttpHandler" />
-        public SocketsTransport(ILog log)
-            : this(new SocketsTransportSettings(), log)
+        public SocketsTransport([NotNull] ILog log)
+            : this(DefaultSettings, log)
         {
         }
 
         /// <inheritdoc cref="SocketsHttpHandler" />
-        public SocketsTransport(SocketsTransportSettings settings, ILog log)
-            : this(settings, log, null, null)
+        public SocketsTransport([NotNull] SocketsTransportSettings settings, [NotNull] ILog log)
         {
-        }
+            this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            this.log = (log ?? throw new ArgumentNullException(nameof(log))).ForContext<SocketsTransport>();
 
-        internal SocketsTransport(
-            SocketsTransportSettings settings,
-            ILog log,
-            IInternalTransport sender,
-            IHttpClientProvider clientProvider)
-        {
-            this.settings = settings;
-            this.log = log;
-
-            this.sender = sender ?? CreateSender(settings, log);
-            this.clientProvider = clientProvider ?? new HttpClientProvider(this.settings);
+            handlerProvider = new SocketsHandlerProvider(settings);
+            timeoutProvider = new TimeoutProvider(settings.RequestAbortTimeout, this.log);
+            errorHandler = new ErrorHandler(this.log);
+            socketTuner = new SocketTuner(settings, this.log);
+            bodyReader = new BodyReader(
+                settings.BufferFactory,
+                len => settings.UseResponseStreaming(len),
+                () => settings.MaxResponseBodySize,
+                this.log);
         }
 
         /// <inheritdoc />
-        public TransportCapabilities Capabilities { get; } = TransportCapabilities.RequestStreaming | TransportCapabilities.ResponseStreaming;
+        public TransportCapabilities Capabilities
+            => TransportCapabilities.RequestStreaming | TransportCapabilities.ResponseStreaming;
 
         /// <inheritdoc />
-        public async Task<Response> SendAsync(Request request, TimeSpan? connectionTimeout, TimeSpan timeout, CancellationToken cancellationToken)
-        {
-            if (cancellationToken.IsCancellationRequested)
-                return Responses.Canceled;
+        public Task<Response> SendAsync(Request request, TimeSpan? connectionTimeout, TimeSpan timeout, CancellationToken token)
+            => timeoutProvider.SendWithTimeoutAsync((r, t) => SendAsync(r, connectionTimeout, t), request, timeout, token);
 
-            if (timeout.TotalMilliseconds < 1)
+        private async Task<Response> SendAsync(Request request, TimeSpan? connectionTimeout, CancellationToken token)
+        {
+            try
             {
-                LogRequestTimeout(request, timeout);
-                return Responses.Timeout;
-            }
+                using (var state = new DisposableState())
+                {
+                    state.Request = RequestMessageFactory.Create(request, token, log);
+                    if (state.Request.Content is GenericContent content && socketTuner.CanTune)
+                        state.Request.Content = new SocketTuningContent(content, socketTuner, log);
 
-            using (var timeoutCancellation = new CancellationTokenSource())
-            using (var requestCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+                    var handler = handlerProvider.Obtain(connectionTimeout);
+
+                    state.Response = await SocketsHandlerInvoker.Invoke(handler, state.Request, token).ConfigureAwait(false);
+
+                    var responseCode = (ResponseCode)(int)state.Response.StatusCode;
+                    var responseHeaders = ResponseHeadersConverter.Convert(state.Response);
+
+                    var bodyReadResult = await bodyReader.ReadAsync(state.Response, token).ConfigureAwait(false);
+                    if (bodyReadResult.Stream == null)
+                        return new Response(bodyReadResult.ErrorCode ?? responseCode, bodyReadResult.Content, responseHeaders);
+
+                    state.PreventNextDispose();
+
+                    return new Response(responseCode, null, responseHeaders, new DisposableBodyStream(bodyReadResult.Stream, state));
+                }
+            }
+            catch (Exception error)
             {
-                var client = clientProvider.GetClient(connectionTimeout);
-                var timeoutTask = Task.Delay(timeout, timeoutCancellation.Token);
-                var senderTask = sender.SendAsync(client, request, requestCancellation.Token);
-                var completedTask = await Task.WhenAny(timeoutTask, senderTask).ConfigureAwait(false);
-                if (completedTask is Task<Response> taskWithResponse)
-                {
-                    timeoutCancellation.Cancel();
-                    return taskWithResponse.GetAwaiter().GetResult();
-                }
+                var errorResponse = errorHandler.TryHandle(request, error, token);
+                if (errorResponse == null)
+                    throw;
 
-                // completedTask is timeout Task
-                requestCancellation.Cancel();
-                LogRequestTimeout(request, timeout);
-
-                // wait for cancellation & dispose resources associated with Response object
-                // ReSharper disable once MethodSupportsCancellation
-                var senderTaskContinuation = senderTask.ContinueWith(
-                    t =>
-                    {
-                        if (t.IsCompleted)
-                            t.GetAwaiter().GetResult().Dispose();
-                    });
-
-                using (var abortCancellation = new CancellationTokenSource())
-                {
-                    var abortWaitingDelay = Task.Delay(settings.RequestAbortTimeout, abortCancellation.Token);
-
-                    await Task.WhenAny(senderTaskContinuation, abortWaitingDelay).ConfigureAwait(false);
-
-                    abortCancellation.Cancel();
-                }
-
-                if (!senderTask.IsCompleted)
-                    LogFailedToWaitForRequestAbort();
-
-                return Responses.Timeout;
+                return errorResponse;
             }
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-            => clientProvider.Dispose();
-
-        private static InternalTransport CreateSender(SocketsTransportSettings settings, ILog log)
-        {
-            var requestFactory = new HttpRequestMessageFactory(log);
-            var responseReader = new ResponseReader(settings, log);
-            var socketTuner = new SocketTuner(settings, log);
-
-            return new InternalTransport(requestFactory, responseReader, socketTuner, log);
-        }
-
-        private void LogRequestTimeout(Request request, TimeSpan timeout)
-        {
-            log.Warn(
-                "Request timed out. Target = {Target}. Timeout = {Timeout}.",
-                request.Url.Authority,
-                timeout.ToPrettyString());
-        }
-
-        private void LogFailedToWaitForRequestAbort()
-        {
-            log.Warn(
-                "Timed out request was aborted but did not complete in {RequestAbortTimeout}.",
-                settings.RequestAbortTimeout.ToPrettyString());
         }
     }
 }

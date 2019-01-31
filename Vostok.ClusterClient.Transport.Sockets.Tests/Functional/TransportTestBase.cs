@@ -13,8 +13,8 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests.Functional
     [TestFixture]
     internal class TransportTestsBase
     {
-        protected ILog log;
-        protected SocketsTransport transport;
+        private ILog log;
+        private SocketsTransport transport;
 
         static TransportTestsBase()
         {
@@ -22,7 +22,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests.Functional
         }
 
         [SetUp]
-        public virtual void SetUp()
+        public void SetUp()
         {
             log = new ConsoleLog();
             transport = new SocketsTransport(new SocketsTransportSettings(), log);

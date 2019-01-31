@@ -1,6 +1,5 @@
 using System;
 using System.Net;
-using System.Threading;
 using JetBrains.Annotations;
 
 namespace Vostok.Clusterclient.Transport.Sockets
@@ -51,17 +50,15 @@ namespace Vostok.Clusterclient.Transport.Sockets
         /// </summary>
         public bool AllowAutoRedirect { get; set; }
 
-
+        /// <summary>
+        /// Enables/disables TCP keep-alive mechanism. Currently only works in Windows.
+        /// </summary>
+        public bool TcpKeepAliveEnabled { get; set; }
 
         /// <summary>
-        /// Enables/disables TCP keep-alive mechanism.
+        /// Enables/disables ARP cache warmup. Currently only works in Windows.
         /// </summary>
-        public bool TcpKeepAliveEnabled { get; set; } = true;
-
-        /// <summary>
-        /// Enables/disables ARP cache warmup.
-        /// </summary>
-        public bool ArpCacheWarmupEnabled { get; set; } = true;
+        public bool ArpCacheWarmupEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets the duration between two keep-alive transmissions in idle condition.

@@ -5,20 +5,25 @@ using System.Runtime.InteropServices;
 using Vostok.Commons.Helpers.Network;
 using Vostok.Logging.Abstractions;
 
-namespace Vostok.Clusterclient.Transport.Sockets.Hacks
+namespace Vostok.Clusterclient.Transport.Sockets
 {
-    internal class SocketTuner : ISocketTuner
+    internal class SocketTuner
     {
-        private readonly SocketsTransportSettings settings;
         private readonly ILog log;
+        private readonly bool arpWarmupEnabled;
+        private readonly bool keepAliveEnabled;
         private readonly byte[] keepAliveValues;
 
         public SocketTuner(SocketsTransportSettings settings, ILog log)
         {
-            this.settings = settings;
             this.log = log;
-            keepAliveValues = GetKeepAliveValues(settings);
+
+            arpWarmupEnabled = settings.ArpCacheWarmupEnabled && RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            keepAliveEnabled = settings.TcpKeepAliveEnabled && RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            keepAliveValues = keepAliveEnabled ? GetKeepAliveValues(settings) : null;
         }
+
+        public bool CanTune => arpWarmupEnabled || keepAliveEnabled;
 
         public void Tune(Socket socket)
         {
@@ -27,28 +32,27 @@ namespace Vostok.Clusterclient.Transport.Sockets.Hacks
 
             try
             {
-                TuneArp(socket);
+                if (arpWarmupEnabled && socket.RemoteEndPoint is IPEndPoint ipEndPoint)
+                    ArpCacheMaintainer.ReportAddress(ipEndPoint.Address);
             }
-            catch (Exception e)
+            catch (Exception error)
             {
-                log.ForContext<SocketTuner>().Warn(e);
+                log.Warn(error, "Failed to enable ARP cache warmup for replica address.");
             }
 
             try
             {
-                TuneKeepAlive(socket);
+                if (keepAliveEnabled)
+                    socket.IOControl(IOControlCode.KeepAliveValues, keepAliveValues, null);
             }
-            catch (Exception e)
+            catch (Exception error)
             {
-                log.ForContext<SocketTuner>().Warn(e);
+                log.Warn(error, "Failed to enable TCP keep-alive for socket.");
             }
         }
 
         private static byte[] GetKeepAliveValues(SocketsTransportSettings settings)
         {
-            if (!settings.TcpKeepAliveEnabled || !RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                return null;
-
             var tcpKeepAliveTime = (int)settings.TcpKeepAliveTime.TotalMilliseconds;
             var tcpKeepAliveInterval = (int)settings.TcpKeepAliveInterval.TotalMilliseconds;
 
@@ -67,18 +71,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.Hacks
                 (byte)((tcpKeepAliveInterval >> 16) & byte.MaxValue),
                 (byte)((tcpKeepAliveInterval >> 24) & byte.MaxValue)
             };
-        }
-
-        private void TuneArp(Socket socket)
-        {
-            if (settings.ArpCacheWarmupEnabled && socket.RemoteEndPoint is IPEndPoint ipEndPoint)
-                ArpCacheMaintainer.ReportAddress(ipEndPoint.Address);
-        }
-
-        private void TuneKeepAlive(Socket socket)
-        {
-            if (settings.TcpKeepAliveEnabled && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                socket.IOControl(IOControlCode.KeepAliveValues, keepAliveValues, null);
         }
     }
 }
