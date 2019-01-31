@@ -8,6 +8,7 @@ using Invoker = System.Func<System.Net.Http.SocketsHttpHandler, System.Net.Http.
 
 namespace Vostok.Clusterclient.Transport.Sockets
 {
+    // ReSharper disable once ClassNeverInstantiated.Global
     internal class SocketsHandlerInvoker : HttpMessageHandler
     {
         private static readonly Invoker invoker;
@@ -36,7 +37,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
             => invoker(handler, message, token);
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage message, CancellationToken token)
-            => throw new NotImplementedException();
+            => throw new NotSupportedException();
 
         private static Invoker BuildInvoker()
         {

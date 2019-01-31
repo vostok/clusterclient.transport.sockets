@@ -14,9 +14,11 @@ namespace Vostok.Clusterclient.Transport.Sockets
         private const int GlobalCacheCapacity = 25;
         private const int LocalCacheCapacity = 3;
 
+        // (iloktionov): Global cache is limited in size to prevent leaks resulting from random connection timeouts:
         private static readonly RecyclingBoundedCache<GlobalCacheKey, SocketsHttpHandler> globalCache
             = new RecyclingBoundedCache<GlobalCacheKey, SocketsHttpHandler>(GlobalCacheCapacity, GlobalCacheKeyComparer.Instance);
 
+        // (iloktionov): Local cache isolates well-behaving clients from others who cause global cache purging:
         private readonly RecyclingBoundedCache<TimeSpan, SocketsHttpHandler> localCache;
         private readonly Func<TimeSpan, SocketsHttpHandler> localCacheFactory;
 

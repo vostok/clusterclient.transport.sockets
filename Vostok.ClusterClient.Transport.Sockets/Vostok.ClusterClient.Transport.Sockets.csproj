@@ -39,7 +39,6 @@
 
   <ItemGroup>
     <Compile Include="..\..\vostok.commons.collections\Vostok.Commons.Collections\RecyclingBoundedCache.cs" Link="Commons\RecyclingBoundedCache.cs" />
-    <Compile Include="..\..\vostok.commons.time\Vostok.Commons.Time\TimeSpanFormatting.cs" Link="Commons\TimeSpanFormatting.cs" />
     <Compile Include="..\..\vostok.commons.helpers\Vostok.Commons.Helpers\Network\*.cs" LinkBase="Commons\" />
   </ItemGroup>
 

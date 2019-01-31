@@ -7,13 +7,14 @@ notests *default:
 
   install:
     - Vostok.ClusterClient.Transport.Sockets/bin/Release/netcoreapp2.1/Vostok.ClusterClient.Transport.Sockets.dll
+    - module vostok.clusterclient.core
+    - module vostok.logging.abstractions
 
   deps:
     - vostok.devtools
     - vostok.logging.abstractions
     - vostok.clusterclient.core
     - vostok.commons.collections/src
-    - vostok.commons.time/src
     - vostok.commons.helpers/src
     - vostok.clusterclient.transport.systemnethttp/src
 

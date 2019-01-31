@@ -58,17 +58,17 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests.Functional
         }
 
         #region Sniffer
+
         private class DisconnectsSniffer : IDisposable
         {
-            private TraceEventSession etwSession;
+            private readonly TraceEventSession etwSession;
             private int disconnects;
 
             public int Disconnects => disconnects;
 
             public DisconnectsSniffer(int port)
             {                
-                var etwSession = new TraceEventSession(nameof(DisconnectsSniffer));
-                this.etwSession = etwSession;
+                etwSession = new TraceEventSession(nameof(DisconnectsSniffer));
                 etwSession.EnableKernelProvider(KernelTraceEventParser.Keywords.NetworkTCPIP);
                 etwSession.Source.Kernel.TcpIpDisconnect += data =>
                 {
@@ -89,6 +89,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests.Functional
                 etwSession?.Dispose();
             }
         }
+
         #endregion
     }
 }

@@ -1,6 +1,5 @@
 using System.IO;
 using System.Threading.Tasks;
-using Vostok.Clusterclient.Transport.Sockets.Hacks;
 using Vostok.Clusterclient.Transport.SystemNetHttp.Contents;
 using Vostok.Logging.Abstractions;
 

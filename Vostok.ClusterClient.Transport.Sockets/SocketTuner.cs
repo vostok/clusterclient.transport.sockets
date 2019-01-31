@@ -5,9 +5,9 @@ using System.Runtime.InteropServices;
 using Vostok.Commons.Helpers.Network;
 using Vostok.Logging.Abstractions;
 
-namespace Vostok.Clusterclient.Transport.Sockets.Hacks
+namespace Vostok.Clusterclient.Transport.Sockets
 {
-    internal class SocketTuner : ISocketTuner
+    internal class SocketTuner
     {
         private readonly ILog log;
         private readonly bool arpWarmupEnabled;
