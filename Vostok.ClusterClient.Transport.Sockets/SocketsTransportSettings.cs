@@ -1,6 +1,5 @@
 using System;
 using System.Net;
-using System.Threading;
 using JetBrains.Annotations;
 
 namespace Vostok.Clusterclient.Transport.Sockets
@@ -50,8 +49,6 @@ namespace Vostok.Clusterclient.Transport.Sockets
         /// Gets or sets a value that indicates whether the transport should follow HTTP redirection responses.
         /// </summary>
         public bool AllowAutoRedirect { get; set; }
-
-
 
         /// <summary>
         /// Enables/disables TCP keep-alive mechanism.
