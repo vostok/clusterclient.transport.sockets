@@ -51,14 +51,14 @@ namespace Vostok.Clusterclient.Transport.Sockets
         public bool AllowAutoRedirect { get; set; }
 
         /// <summary>
-        /// Enables/disables TCP keep-alive mechanism.
+        /// Enables/disables TCP keep-alive mechanism. Currently only works in Windows.
         /// </summary>
-        public bool TcpKeepAliveEnabled { get; set; } = true;
+        public bool TcpKeepAliveEnabled { get; set; }
 
         /// <summary>
-        /// Enables/disables ARP cache warmup.
+        /// Enables/disables ARP cache warmup. Currently only works in Windows.
         /// </summary>
-        public bool ArpCacheWarmupEnabled { get; set; } = true;
+        public bool ArpCacheWarmupEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets the duration between two keep-alive transmissions in idle condition.
