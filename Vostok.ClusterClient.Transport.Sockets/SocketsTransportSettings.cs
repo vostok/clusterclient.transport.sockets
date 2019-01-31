@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using System.Net.Http;
 using JetBrains.Annotations;
 
 namespace Vostok.Clusterclient.Transport.Sockets
@@ -31,7 +32,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
         public IWebProxy Proxy { get; set; }
 
         /// <summary>
-        /// Max connections count to single endpoint. When this limit is reached, requests get place into queue and wait for a free connection.
+        /// Max connections count to a single endpoint. When this limit is reached, requests get placed into a queue and wait for a free connection.
         /// </summary>
         public int MaxConnectionsPerEndpoint { get; set; } = 10 * 1000;
 
@@ -66,10 +67,15 @@ namespace Vostok.Clusterclient.Transport.Sockets
         public TimeSpan TcpKeepAliveTime { get; set; } = TimeSpan.FromSeconds(3);
 
         /// <summary>
-        /// Gets ot sets the duration between two successive keep-alive retransmissions than happen when acknowledgement to the previous
+        /// Gets or sets the duration between two successive keep-alive retransmissions than happen when acknowledgement to the previous
         /// keep-alive transmission is not received.
         /// </summary>
         public TimeSpan TcpKeepAliveInterval { get; set; } = TimeSpan.FromSeconds(1);
+
+        /// <summary>
+        /// Gets or sets a delegate that allows to perform arbitrary tuning of <see cref="SocketsHttpHandler"/>.
+        /// </summary>
+        public Action<SocketsHttpHandler> CustomTuning { get; set; }
 
         internal Func<int, byte[]> BufferFactory { get; set; } = size => new byte[size];
     }

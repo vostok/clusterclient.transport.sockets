@@ -73,6 +73,14 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
         }
 
         [Test]
+        public void Should_return_a_handler_with_given_custom_tuning_applied()
+        {
+            settings.CustomTuning = handler => handler.MaxResponseHeadersLength = 65242;
+
+            provider.Obtain(1.Seconds()).MaxResponseHeadersLength.Should().Be(65242);
+        }
+
+        [Test]
         public void Should_cache_handler_in_one_instance()
         {
             var handler1 = provider.Obtain(null);

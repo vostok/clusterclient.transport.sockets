@@ -39,11 +39,12 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 connectionTimeout ?? Timeout.InfiniteTimeSpan,
                 settings.ConnectionIdleTimeout,
                 settings.ConnectionLifetime,
-                settings.MaxConnectionsPerEndpoint);
+                settings.MaxConnectionsPerEndpoint,
+                settings.CustomTuning);
 
         private static SocketsHttpHandler CreateHandler(GlobalCacheKey key)
         {
-            return new SocketsHttpHandler
+            var handler = new SocketsHttpHandler
             {
                 Proxy = key.Proxy,
                 UseProxy = key.Proxy != null,
@@ -59,9 +60,13 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 SslOptions =
                 {
                     CertificateRevocationCheckMode = X509RevocationMode.NoCheck,
-                    RemoteCertificateValidationCallback = (_, __, ___, ____) => true
+                    RemoteCertificateValidationCallback = (_, __, ___, ____) => true,
                 }
             };
+
+            key.CustomTuning?.Invoke(handler);
+
+            return handler;
         }
 
         private readonly struct GlobalCacheKey
@@ -72,6 +77,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
             public readonly TimeSpan ConnectionIdleTimeout;
             public readonly TimeSpan ConnectionLifetime;
             public readonly int MaxConnectionsPerEndpoint;
+            public readonly Action<SocketsHttpHandler> CustomTuning;
 
             public GlobalCacheKey(
                 IWebProxy proxy,
@@ -79,7 +85,8 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 TimeSpan connectionTimeout,
                 TimeSpan connectionIdleTimeout,
                 TimeSpan connectionLifetime,
-                int maxConnectionsPerEndpoint)
+                int maxConnectionsPerEndpoint,
+                Action<SocketsHttpHandler> customTuning)
             {
                 Proxy = proxy;
                 AllowAutoRedirect = allowAutoRedirect;
@@ -87,6 +94,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
                 ConnectionIdleTimeout = connectionIdleTimeout;
                 ConnectionLifetime = connectionLifetime;
                 MaxConnectionsPerEndpoint = maxConnectionsPerEndpoint;
+                CustomTuning = customTuning;
             }
         }
 
@@ -98,6 +106,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
             {
                 return
                     ReferenceEquals(x.Proxy, y.Proxy) &&
+                    ReferenceEquals(x.CustomTuning, y.CustomTuning) &&
                     x.AllowAutoRedirect == y.AllowAutoRedirect &&
                     x.ConnectionTimeout == y.ConnectionTimeout &&
                     x.ConnectionIdleTimeout == y.ConnectionIdleTimeout &&
@@ -112,7 +121,8 @@ namespace Vostok.Clusterclient.Transport.Sockets
                     key.ConnectionTimeout,
                     key.ConnectionIdleTimeout,
                     key.ConnectionLifetime,
-                    key.MaxConnectionsPerEndpoint);
+                    key.MaxConnectionsPerEndpoint,
+                    key.CustomTuning);
         }
     }
 }
