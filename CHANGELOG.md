@@ -1,4 +1,4 @@
-## 0.1.0 (03-03-2019): 
+## 0.1.2 (03-03-2019): 
 
 SocketsTransport now supports composite request bodies.
 
