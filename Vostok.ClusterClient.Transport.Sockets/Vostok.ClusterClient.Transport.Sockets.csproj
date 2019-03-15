@@ -24,6 +24,7 @@
     <PackageProjectUrl>https://github.com/vostok/clusterclient.transport.sockets</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/vostok/clusterclient.transport.sockets/blob/master/LICENSE</PackageLicenseUrl>
     <PackageTags>vostok vostok.clusterclient</PackageTags>
+    <PackageReleaseNotes>https://github.com/vostok/clusterclient.transport.sockets/blob/master/CHANGELOG.md</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/vostok/clusterclient.transport.sockets</RepositoryUrl>
   </PropertyGroup>
 
