@@ -42,7 +42,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
         public SocketsTransport([NotNull] SocketsTransportSettings settings, [NotNull] ILog log)
         {
             this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
-            this.log = (log ?? throw new ArgumentNullException(nameof(log))).ForContext<SocketsTransport>();
+            this.log = log ?? throw new ArgumentNullException(nameof(log));
 
             handlerProvider = new SocketsHandlerProvider(settings);
             timeoutProvider = new TimeoutProvider(settings.RequestAbortTimeout, this.log);
