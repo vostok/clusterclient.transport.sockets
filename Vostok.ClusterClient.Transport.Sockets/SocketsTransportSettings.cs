@@ -77,6 +77,9 @@ namespace Vostok.Clusterclient.Transport.Sockets
         /// </summary>
         public Action<SocketsHttpHandler> CustomTuning { get; set; }
 
-        internal Func<int, byte[]> BufferFactory { get; set; } = size => new byte[size];
+        /// <summary>
+        /// Gets or sets a delegate used to create response body buffers for given sizes.
+        /// </summary>
+        public Func<int, byte[]> BufferFactory { get; set; } = size => new byte[size];
     }
 }
