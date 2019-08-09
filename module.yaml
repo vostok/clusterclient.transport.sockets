@@ -23,7 +23,7 @@ full-build > notests:
     - vostok.logging.console
     - vostok.commons.testing/src
     - vostok.commons.threading/src
-    - vostok.clusterclient.transport.tests
+    - vostok.clusterclient.transport.tests@network-errors-handling
 
   build:
     target: Vostok.ClusterClient.Transport.Sockets.sln
