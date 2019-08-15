@@ -83,7 +83,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
                     var responseHeaders = ResponseHeadersConverter.Convert(state.Response);
 
                     if (request.Method == RequestMethods.Head)
-                        return new Response(responseCode, Content.Empty, responseHeaders);
+                        return new Response(responseCode, headers: responseHeaders);
                     
                     var bodyReadResult = await bodyReader.ReadAsync(state.Response, token).ConfigureAwait(false);
 
