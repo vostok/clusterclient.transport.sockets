@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
@@ -22,7 +23,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
         [SetUp]
         public void TestSetup()
         {
-            handler = new ErrorHandler(new ConsoleLog());
+            handler = new ErrorHandler(new SynchronousConsoleLog());
 
             request = Request.Get("http://foo/bar");
 
@@ -62,13 +63,13 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
         }
 
         [Test]
-        public void Should_return_unkonown_failure_response_for_arbitrary_HttpRequestException()
+        public void Should_return_unknown_failure_response_for_arbitrary_HttpRequestException()
         {
             Handle(new HttpRequestException()).Code.Should().Be(ResponseCode.UnknownFailure);
         }
 
         [Test]
-        public void Should_return_unkonown_failure_response_for_arbitrary_Exception()
+        public void Should_return_unknown_failure_response_for_arbitrary_Exception()
         {
             Handle(new Exception()).Code.Should().Be(ResponseCode.UnknownFailure);
         }
@@ -98,6 +99,8 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
         public void Should_return_connection_failure_response_for_inner_SocketException_with_given_code(SocketError code)
         {
             Handle(new HttpRequestException("", new SocketException((int) code))).Code.Should().Be(ResponseCode.ConnectFailure);
+
+            Handle(new HttpRequestException("", new IOException("", new SocketException((int) code)))).Code.Should().Be(ResponseCode.ConnectFailure);
         }
 
         private Response Handle(Exception error)

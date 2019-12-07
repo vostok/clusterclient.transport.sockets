@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
@@ -30,11 +31,11 @@ namespace Vostok.Clusterclient.Transport.Sockets
                     return null;
 
                 case UserStreamException _:
-                    LogUserStreamFailure(error);
+                    LogUserStreamFailure(request, error);
                     return Responses.StreamInputFailure;
 
                 case BodySendException _:
-                    log.Error(error);
+                    LogBodySendFailure(request, error);
                     return Responses.SendFailure;
 
                 case HttpRequestException httpError:
@@ -47,12 +48,13 @@ namespace Vostok.Clusterclient.Transport.Sockets
                     break;
             }
 
-            LogUnknownException(error);
+            LogUnknownException(request, error);
             return Responses.UnknownFailure;
         }
 
         private static bool IsConnectionFailure(HttpRequestException error)
             => error.InnerException is SocketException socketError && IsConnectionFailure(socketError.SocketErrorCode) ||
+               error.InnerException is IOException ioError && ioError.InnerException is SocketException deepSocketError && IsConnectionFailure(deepSocketError.SocketErrorCode) ||
                error.InnerException is OperationCanceledException;
 
         private static bool IsConnectionFailure(SocketError code)
@@ -89,10 +91,13 @@ namespace Vostok.Clusterclient.Transport.Sockets
         private void LogConnectionFailure(Request request, Exception error)
             => log.Warn(error, "Connection failure. Target = {Target}.", request.Url.Authority);
 
-        private void LogUserStreamFailure(Exception error)
-            => log.Error(error, "Failed to read from user-provided request body stream");
+        private void LogUserStreamFailure(Request request, Exception error)
+            => log.Error(error, "Failed to read from user-provided request body stream while sending request to {Target}.", request.Url.Authority);
 
-        private void LogUnknownException(Exception error)
-            => log.Error(error, "Unknown exception in sending request.");
+        private void LogBodySendFailure(Request request, Exception error)
+            => log.Error(error, "Failed to send request body to {Target}.", request.Url.Authority);
+
+        private void LogUnknownException(Request request, Exception error)
+            => log.Error(error, "Unknown transport exception has occurred while sending request to {Target}.", request.Url.Authority);
     }
 }

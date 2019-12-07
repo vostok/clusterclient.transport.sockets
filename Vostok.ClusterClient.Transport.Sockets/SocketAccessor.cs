@@ -29,7 +29,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
             catch (Exception error)
             {
                 if (accessor != Empty)
-                    log.Warn(error, "Failed to obtain Socket instance from request stream of type {StreamType}.", stream.GetType().Name);
+                    log.Error(error, "Failed to obtain Socket instance from request stream of type {StreamType}.", stream.GetType().Name);
 
                 accessor = Empty;
                 return null;
@@ -70,7 +70,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
             }
             catch (Exception error)
             {
-                log.ForContext(typeof(SocketAccessor)).Warn(error, "Failed to build Socket accessor delegate.");
+                log.ForContext(typeof(SocketAccessor)).Error(error, "Failed to build Socket accessor delegate.");
                 return Empty;
             }
         }

@@ -1,3 +1,8 @@
+## 0.1.6 (07.12.2019):
+
+* Improved error logging (this fixes https://github.com/vostok/clusterclient.transport.sockets/issues/3)
+* Improved detection of connection errors with following exception hierarchy: `HttpRequestException` --> `IOException` --> `SocketException`
+
 ## 0.1.5 (15-08-2019):
 
 Fixed reception of Content-Length header without body in response to a HEAD request.
