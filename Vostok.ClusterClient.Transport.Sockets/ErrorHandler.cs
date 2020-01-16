@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Transport.SystemNetHttp.Exceptions;
@@ -27,6 +28,9 @@ namespace Vostok.Clusterclient.Transport.Sockets
 
             switch (error)
             {
+                case TaskCanceledException _:
+                    return Responses.Canceled;
+                
                 case StreamAlreadyUsedException _:
                     return null;
 
