@@ -1,3 +1,8 @@
+## 0.1.7 (18.01.2020):
+
+* Converted some of the error logging to warnings.
+* Greatly improved detection and logging of connection errors.
+
 ## 0.1.6 (07.12.2019):
 
 * Improved error logging (this fixes https://github.com/vostok/clusterclient.transport.sockets/issues/3)
