@@ -1,3 +1,7 @@
+## 0.1.8 (18.01.2020):
+
+* Removed unstable tests that utilized ETW.
+
 ## 0.1.7 (18.01.2020):
 
 * Converted some of the error logging to warnings.
