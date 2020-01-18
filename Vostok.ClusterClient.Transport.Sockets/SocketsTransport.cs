@@ -100,7 +100,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
             }
             catch (Exception error)
             {
-                var errorResponse = errorHandler.TryHandle(request, error, token);
+                var errorResponse = errorHandler.TryHandle(request, error, token, connectionTimeout);
                 if (errorResponse == null)
                     throw;
 

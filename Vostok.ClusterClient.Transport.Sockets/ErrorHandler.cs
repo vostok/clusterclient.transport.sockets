@@ -1,11 +1,10 @@
 ﻿using System;
-using System.IO;
-using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
 using JetBrains.Annotations;
 using Vostok.Clusterclient.Core.Model;
 using Vostok.Clusterclient.Transport.SystemNetHttp.Exceptions;
+using Vostok.Commons.Time;
 using Vostok.Logging.Abstractions;
 
 namespace Vostok.Clusterclient.Transport.Sockets
@@ -20,7 +19,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
         }
 
         [CanBeNull]
-        public Response TryHandle(Request request, Exception error, CancellationToken token)
+        public Response TryHandle(Request request, Exception error, CancellationToken token, TimeSpan? connectionTimeout)
         {
             if (token.IsCancellationRequested)
                 return Responses.Canceled;
@@ -38,10 +37,11 @@ namespace Vostok.Clusterclient.Transport.Sockets
                     LogBodySendFailure(request, error);
                     return Responses.SendFailure;
 
-                case HttpRequestException httpError:
-                    if (IsConnectionFailure(httpError))
+                default:
+                    var connectionError = TryDetectConnectionError(error);
+                    if (connectionError != null)
                     {
-                        LogConnectionFailure(request, httpError);
+                        LogConnectionFailure(request, connectionError, connectionTimeout);
                         return Responses.ConnectFailure;
                     }
 
@@ -52,10 +52,23 @@ namespace Vostok.Clusterclient.Transport.Sockets
             return Responses.UnknownFailure;
         }
 
-        private static bool IsConnectionFailure(HttpRequestException error)
-            => error.InnerException is SocketException socketError && IsConnectionFailure(socketError.SocketErrorCode) ||
-               error.InnerException is IOException ioError && ioError.InnerException is SocketException deepSocketError && IsConnectionFailure(deepSocketError.SocketErrorCode) ||
-               error.InnerException is OperationCanceledException;
+        [CanBeNull]
+        private static Exception TryDetectConnectionError(Exception error)
+        {
+            while (true)
+            {
+                if (error == null)
+                    return null;
+
+                if (error is OperationCanceledException)
+                    return error;
+
+                if (error is SocketException socketError && IsConnectionFailure(socketError.SocketErrorCode))
+                    return error;
+
+                error = error.InnerException;
+            }
+        }
 
         private static bool IsConnectionFailure(SocketError code)
         {
@@ -88,16 +101,44 @@ namespace Vostok.Clusterclient.Transport.Sockets
             }
         }
 
-        private void LogConnectionFailure(Request request, Exception error)
-            => log.Warn(error, "Connection failure. Target = {Target}.", request.Url.Authority);
+        private void LogConnectionFailure(Request request, Exception error, TimeSpan? connectionTimeout)
+        {
+            if (error is OperationCanceledException)
+            {
+                log.Warn("Connection attempt timed out. Target = '{Target}'. Timeout = {ConnectionTimeout}.", new
+                {
+                    Target = request.Url.Authority,
+                    ConnectionTimeout = FormatConnectionTimeout(connectionTimeout),
+                    ConnectionTimeoutMs = connectionTimeout?.TotalMilliseconds ?? 0d
+                });
+                return;
+            }
+
+            if (error is SocketException socketError)
+            {
+                log.Warn("Connection failure. Target = '{Target}'. Socket code = {SocketErrorCode}. Timeout = {ConnectionTimeout}.", new
+                {
+                    Target = request.Url.Authority,
+                    socketError.SocketErrorCode,
+                    ConnectionTimeout = FormatConnectionTimeout(connectionTimeout),
+                    ConnectionTimeoutMs = connectionTimeout?.TotalMilliseconds ?? 0d
+                });
+                return;
+            }
+
+            log.Warn(error, "Connection failure. Target = '{Target}'.", request.Url.Authority);
+        }
 
         private void LogUserStreamFailure(Request request, Exception error)
-            => log.Warn(error, "Failed to read from user-provided request body stream while sending request to {Target}.", request.Url.Authority);
+            => log.Warn(error, "Failed to read from user-provided request body stream while sending request to '{Target}'.", request.Url.Authority);
 
         private void LogBodySendFailure(Request request, Exception error)
-            => log.Warn(error, "Failed to send request body to {Target}.", request.Url.Authority);
+            => log.Warn(error, "Failed to send request body to '{Target}'.", request.Url.Authority);
 
         private void LogUnknownException(Request request, Exception error)
-            => log.Error(error, "Unknown transport exception has occurred while sending request to {Target}.", request.Url.Authority);
+            => log.Error(error, "Unknown transport exception has occurred while sending request to '{Target}'.", request.Url.Authority);
+
+        private static string FormatConnectionTimeout(TimeSpan? timeout)
+            => timeout.HasValue ? timeout.Value.ToPrettyString() : "none";
     }
 }

@@ -60,6 +60,7 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
             cancellation.Cancel();
 
             Handle(new HttpRequestException()).Code.Should().Be(ResponseCode.Canceled);
+            Handle(new TaskCanceledException()).Code.Should().Be(ResponseCode.Canceled);
         }
 
         [Test]
@@ -78,6 +79,12 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
         public void Should_return_connection_failure_response_for_inner_TaskCanceledException_when_token_is_not_signaled()
         {
             Handle(new HttpRequestException("", new TaskCanceledException())).Code.Should().Be(ResponseCode.ConnectFailure);
+        }
+
+        [Test]
+        public void Should_return_connection_failure_response_for_TaskCanceledException_when_token_is_not_signaled()
+        {
+            Handle(new TaskCanceledException()).Code.Should().Be(ResponseCode.ConnectFailure);
         }
 
         [TestCase(SocketError.HostDown)]
@@ -104,6 +111,6 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
         }
 
         private Response Handle(Exception error)
-            => handler.TryHandle(request, error, cancellation.Token);
+            => handler.TryHandle(request, error, cancellation.Token, null);
     }
 }
