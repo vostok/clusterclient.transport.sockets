@@ -92,10 +92,10 @@ namespace Vostok.Clusterclient.Transport.Sockets
             => log.Warn(error, "Connection failure. Target = {Target}.", request.Url.Authority);
 
         private void LogUserStreamFailure(Request request, Exception error)
-            => log.Error(error, "Failed to read from user-provided request body stream while sending request to {Target}.", request.Url.Authority);
+            => log.Warn(error, "Failed to read from user-provided request body stream while sending request to {Target}.", request.Url.Authority);
 
         private void LogBodySendFailure(Request request, Exception error)
-            => log.Error(error, "Failed to send request body to {Target}.", request.Url.Authority);
+            => log.Warn(error, "Failed to send request body to {Target}.", request.Url.Authority);
 
         private void LogUnknownException(Request request, Exception error)
             => log.Error(error, "Unknown transport exception has occurred while sending request to {Target}.", request.Url.Authority);
