@@ -110,6 +110,18 @@ namespace Vostok.Clusterclient.Transport.Sockets.Tests
             Handle(new HttpRequestException("", new IOException("", new SocketException((int) code)))).Code.Should().Be(ResponseCode.ConnectFailure);
         }
 
+        [Test]
+        public void Should_return_connection_failure_response_for_IOException_without_inner_exceptions()
+        {
+            Handle(new HttpRequestException("", new IOException())).Code.Should().Be(ResponseCode.ConnectFailure);
+        }
+
+        [Test]
+        public void Should_return_unknown_failure_response_for_IOException_with_inner_exception()
+        {
+            Handle(new HttpRequestException("", new IOException("", new Exception()))).Code.Should().Be(ResponseCode.UnknownFailure);
+        }
+
         private Response Handle(Exception error)
             => handler.TryHandle(request, error, cancellation.Token, null);
     }
