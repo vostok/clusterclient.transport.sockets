@@ -1,3 +1,7 @@
+## 0.1.9 (04.02.2020):
+
+* Improved detection of connection errors once again.
+
 ## 0.1.8 (18.01.2020):
 
 * Removed unstable tests that utilized ETW.
