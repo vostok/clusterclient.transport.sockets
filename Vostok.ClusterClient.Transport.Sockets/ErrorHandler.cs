@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using JetBrains.Annotations;
@@ -64,6 +65,9 @@ namespace Vostok.Clusterclient.Transport.Sockets
                     return error;
 
                 if (error is SocketException socketError && IsConnectionFailure(socketError.SocketErrorCode))
+                    return error;
+
+                if (error is IOException ioError && ioError.InnerException == null)
                     return error;
 
                 error = error.InnerException;
