@@ -19,6 +19,7 @@ namespace Vostok.Clusterclient.Transport.Sockets
     ///     <para>Internally uses <see cref="SocketsHttpHandler" />.</para>
     /// </summary>
     [PublicAPI]
+    [Obsolete("This module is now obsolete. Please use an equivalent implementation from Vostok.ClusterClient.Transport library.")]
     public class SocketsTransport : ITransport
     {
         private static readonly SocketsTransportSettings DefaultSettings = new SocketsTransportSettings();

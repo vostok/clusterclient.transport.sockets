@@ -1,9 +1,11 @@
+using System;
 using JetBrains.Annotations;
 using Vostok.Clusterclient.Core;
 
 namespace Vostok.Clusterclient.Transport.Sockets
 {
     [PublicAPI]
+    [Obsolete("This module is now obsolete. Please use an equivalent extension from Vostok.ClusterClient.Transport library.")]
     public static class IClusterClientConfigurationExtensions
     {
         /// <summary>
